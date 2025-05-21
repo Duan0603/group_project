@@ -9,8 +9,7 @@ public class DBContext {
     
     public DBContext() {
         try {
-            // Edit these parameters according to your database configuration
-            String url = "jdbc:sqlserver://localhost:1433;databaseName=MusicManagement";
+            String url = "jdbc:sqlserver://localhost:1433;databaseName=MusicManagement;encrypt=false;trustServerCertificate=true";
             String username = "sa";
             String password = "sa";
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");

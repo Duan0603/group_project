@@ -94,7 +94,7 @@ CREATE TABLE ListeningHistory (
 
 -- Insert sample admin user (password: admin123)
 INSERT INTO Users (Username, Password, Email, FullName, Role)
-VALUES ('admin', 'e5a7c3966d99ffa96e2d39e0c5bdcee2', 'admin@music.com', 'System Admin', 'ADMIN');
+VALUES ('admin', '123', 'admin@music.com', 'System Admin', 'ADMIN');
 
 -- Insert sample genres
 INSERT INTO Songs (Title, Artist, Album, Genre, Duration) VALUES
