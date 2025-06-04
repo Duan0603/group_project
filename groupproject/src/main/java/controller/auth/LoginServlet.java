@@ -28,7 +28,7 @@ public class LoginServlet extends HttpServlet {
         if (user != null) {
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
-            if ("admin".equals(username) && "alo".equals(password)) {
+            if ("ADMIN".equalsIgnoreCase(user.getRole())) {
                 request.getRequestDispatcher("/WEB-INF/views/admin.jsp").forward(request, response);
             } else {
                 response.sendRedirect(request.getContextPath() + "/home"); // Chuyển hướng về trang chủ
