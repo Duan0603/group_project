@@ -113,6 +113,9 @@
                         <a class="nav-link" href="#statistics" data-bs-toggle="pill">
                             <i class="fas fa-chart-bar me-2"></i>Thống kê
                         </a>
+                        <a class="nav-link" href="${pageContext.request.contextPath}/logout" style="margin-top: 20px;">
+                            <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                        </a>
                     </div>
                 </div>
 
