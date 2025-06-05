@@ -82,6 +82,10 @@
             .text-white {
                 color: #ff69b4 !important;
             }
+            .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+                color: var(--bs-nav-pills-link-active-color);
+                background-color: #fd0d95;
+            }
         </style>
     </head>
     <body>
