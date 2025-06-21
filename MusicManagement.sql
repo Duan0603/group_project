@@ -102,29 +102,6 @@ CREATE TABLE ListeningHistory (
     ListenedAt DATETIME DEFAULT GETDATE()
 );
 
--- Login Attempts table
-CREATE TABLE LoginAttempts (
-    AttemptID INT IDENTITY(1,1) PRIMARY KEY,
-    UserID INT,
-    IPAddress VARCHAR(45),
-    AttemptTime DATETIME DEFAULT GETDATE(),
-    Success BIT DEFAULT 0,
-    FOREIGN KEY (UserID) REFERENCES Users(UserID)
-);
-
--- User Sessions table
-CREATE TABLE UserSessions (
-    SessionID VARCHAR(100) PRIMARY KEY,
-    UserID INT NOT NULL,
-    LoginTime DATETIME DEFAULT GETDATE(),
-    ExpiryTime DATETIME,
-    LastActivityTime DATETIME,
-    IPAddress VARCHAR(45),
-    UserAgent VARCHAR(255),
-    IsValid BIT DEFAULT 1,
-    FOREIGN KEY (UserID) REFERENCES Users(UserID)
-);
-
 -- Insert sample admin user (password: admin123)
 INSERT INTO Users (Username, Password, Email, FullName, Role)
 VALUES ('admin', 'sa', 'admin@music.com', 'System Admin', 'ADMIN');
@@ -180,9 +157,9 @@ EXEC sp_executesql @sql;
     ADD CONSTRAINT UQ_Users_Username UNIQUE (Username);
 
     COMMIT TRAN;
-    PRINT N'✅ Đã đổi Username sang NVARCHAR(50) và thêm lại UNIQUE thành công.';
+    PRINT N' Đã đổi Username sang NVARCHAR(50) và thêm lại UNIQUE thành công.';
 END TRY
 BEGIN CATCH
     ROLLBACK TRAN;
-    PRINT N'❌ Lỗi: ' + ERROR_MESSAGE();
+    PRINT N' Lỗi: ' + ERROR_MESSAGE();
 END CATCH;
