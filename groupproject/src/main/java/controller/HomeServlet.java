@@ -35,7 +35,6 @@ import model.User;
 
 @WebServlet(name = "HomeServlet", urlPatterns = {"/", "/home"})
 public class HomeServlet extends HttpServlet {
-
     @Override
     protected void doGet(HttpServletRequest request,
             HttpServletResponse response)
