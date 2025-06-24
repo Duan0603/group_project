@@ -16,7 +16,7 @@ import org.json.JSONObject;
 @WebServlet(name = "FacebookAuthServlet", urlPatterns = {"/facebook-auth"})
 public class FacebookAuthServlet extends HttpServlet {
 
-    private static final String APP_ID = "your-id-here";
+    private static final String APP_ID = "your-id-herez";
     private static final String APP_SECRET = "your-secret-here";
 
     @Override
