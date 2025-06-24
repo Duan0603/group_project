@@ -13,6 +13,8 @@ public class HomeServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         // Ở đây bạn có thể load danh sách bài hát từ DB và set vào request
+
         request.getRequestDispatcher("/WEB-INF/views/home.jsp").forward(request, response);
+
     }
 } 
