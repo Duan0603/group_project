@@ -11,12 +11,22 @@ CREATE TABLE Users (
     Username VARCHAR(50) NOT NULL UNIQUE,
     Password VARCHAR(255) NOT NULL,
     Email VARCHAR(100) NOT NULL UNIQUE,
-    FullName NVARCHAR(100),
     Role VARCHAR(20) DEFAULT 'USER',
     CreatedDate DATETIME DEFAULT GETDATE(),
     LastLogin DATETIME,
-    Status BIT DEFAULT 1
+    Status BIT DEFAULT 1,
 );
+
+ALTER TABLE Users
+ADD Reset_token VARCHAR(255);
+ALTER TABLE Users ADD Reset_token_expiry VARCHAR(255);
+
+ALTER TABLE Users ADD Provider VARCHAR(20) DEFAULT 'local';
+ALTER TABLE Users ADD GoogleID VARCHAR(50);
+ALTER TABLE Users ADD FacebookID VARCHAR(100);
+ALTER TABLE Users DROP COLUMN FullName;
+ALTER TABLE Users
+ALTER COLUMN Username NVARCHAR(50) NOT NULL;
 
 -- Artists table (extends Users)
 CREATE TABLE Artists (
@@ -93,14 +103,9 @@ CREATE TABLE ListeningHistory (
 );
 
 -- Insert sample admin user (password: admin123)
-INSERT INTO Users (Username, Password, Email, FullName, Role)
-VALUES ('admin', 'e5a7c3966d99ffa96e2d39e0c5bdcee2', 'admin@music.com', 'System Admin', 'ADMIN');
-
+INSERT INTO Users (Username, Password, Email, Role)
+VALUES ('admin', 'sa', 'admin@music.com',  'ADMIN');
 -- Insert sample genres
-INSERT INTO Songs (Title, Artist, Album, Genre, Duration) VALUES
-('Sample Song 1', 'Artist 1', 'Album 1', 'Pop', 180),
-('Sample Song 2', 'Artist 2', 'Album 2', 'Rock', 240),
-('Sample Song 3', 'Artist 3', 'Album 3', 'Jazz', 300);
 
 -- Follows table (for user following artists/users)
 CREATE TABLE Follows (
@@ -121,6 +126,39 @@ CREATE TABLE Likes (
     FOREIGN KEY (userId) REFERENCES Users(UserID),
     FOREIGN KEY (songId) REFERENCES Songs(SongID)
 ); 
+
+BEGIN TRY
+    BEGIN TRAN;  -- Bắt đầu giao dịch
+
+    -- 1. Tìm và xóa constraint UNIQUE hiện có trên Username
+    DECLARE @uq_name sysname;
+    SELECT @uq_name = kc.name
+    FROM sys.key_constraints kc
+    INNER JOIN sys.tables t ON kc.parent_object_id = t.object_id
+    WHERE t.name = 'Users' AND kc.[type] = 'UQ';
+
+    IF @uq_name IS NOT NULL
+    BEGIN
+       DECLARE @sql NVARCHAR(MAX);
+SET @sql = N'ALTER TABLE Users DROP CONSTRAINT ' + QUOTENAME(@uq_name);
+EXEC sp_executesql @sql;
+    END
+
+    -- 2. Đổi kiểu Username sang NVARCHAR(50)
+    ALTER TABLE Users
+    ALTER COLUMN Username NVARCHAR(50) NOT NULL;
+
+    -- 3. Thêm lại UNIQUE constraint rõ ràng
+    ALTER TABLE Users
+    ADD CONSTRAINT UQ_Users_Username UNIQUE (Username);
+
+    COMMIT TRAN;
+    PRINT N' Đã đổi Username sang NVARCHAR(50) và thêm lại UNIQUE thành công.';
+END TRY
+BEGIN CATCH
+    ROLLBACK TRAN;
+    PRINT N' Lỗi: ' + ERROR_MESSAGE();
+END CATCH;
 
 -- Insert songs table
 INSERT INTO Songs (Title, Artist, Album, Genre, Duration, ReleaseDate, FilePath, CoverImage)
