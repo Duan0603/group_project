@@ -20,8 +20,8 @@ import utils.OtpManager;
 @WebServlet(name = "GoogleAuthServlet", urlPatterns = {"/login-google"})
 public class GoogleAuthServlet extends HttpServlet {
 
-    private static final String CLIENT_ID = "your-client-id-here";
-    private static final String CLIENT_SECRET = "your-client-secret-here";
+    private static final String CLIENT_ID = "434084397596-ke38cl1ediqsmlunleio6srv1ape03kr.apps.googleusercontent.com";
+    private static final String CLIENT_SECRET = "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";
     private static final String SCOPE = "email profile";
 
     @Override

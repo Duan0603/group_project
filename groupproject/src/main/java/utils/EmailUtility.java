@@ -12,7 +12,7 @@ import java.util.Properties;
 public class EmailUtility {
 
     private static final String SENDER_EMAIL = "tunguyencao11925@gmail.com"; 
-    private static final String APP_PASSWORD = "your-pass-here";    
+    private static final String APP_PASSWORD = "cyri yxal dmfu rqbj";    
 
     public static boolean sendEmail(String to, String subject, String htmlContent) {
         if (to == null || to.trim().isEmpty()) {
