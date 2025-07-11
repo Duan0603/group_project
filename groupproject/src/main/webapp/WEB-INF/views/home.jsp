@@ -2,6 +2,7 @@
 <%@ page import="model.User" %>
 <%
     User user = (User) session.getAttribute("user");
+    String displayName = (user != null ? user.getUsername() : "");
 %>
 <!DOCTYPE html>
 <html>
@@ -56,34 +57,37 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <a class="navbar-brand" href="<%=request.getContextPath()%>/home">Pinkify</a>
-            <div class="collapse navbar-collapse justify-content-end">
-                <ul class="navbar-nav">
-                    <% if (user == null) { %>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<%=request.getContextPath()%>/login">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<%=request.getContextPath()%>/signup">Signup</a>
-                        </li>
-                    <% } else { %>
-                        <li class="nav-item">
-                            <span class="nav-link">Hello, <%=user.getFullName()%></span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<%=request.getContextPath()%>/logout">Logout</a>
-                        </li>
-                    <% } %>
-                </ul>
-            </div>
+<nav class="navbar navbar-expand-lg">
+    <div class="container">
+        <a class="navbar-brand" href="<%=request.getContextPath()%>/home">Pinkify</a>
+        <div class="collapse navbar-collapse justify-content-end">
+            <ul class="navbar-nav">
+
+                <% if (user == null) {%>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%=request.getContextPath()%>/login">Login</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%=request.getContextPath()%>/signup">Signup</a>
+                </li>
+                <% } else {%>
+
+                <li class="nav-item">
+                    <span class="nav-link">Hello <%= displayName%></span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%=request.getContextPath()%>/logout">Logout</a>
+                </li>
+                <% }%>
+
+            </ul>
         </div>
-    </nav>
-    <div class="container text-center">
-        <div class="main-title">Chào mừng bạn đến với Pinkify!</div>
-        <p class="mt-3" style="color:#ff69b4;">Hãy đăng nhập để trải nghiệm nghe nhạc với tone màu hồng hiện đại.</p>
-        <!-- Ở đây sẽ hiển thị danh sách bài hát, player, v.v. -->
     </div>
+</nav>
+
+<div class="container text-center">
+    <div class="main-title">Chào mừng bạn đến với Pinkify!</div>
+    <p class="mt-3" style="color:#ff69b4;">Hãy đăng nhập để trải nghiệm nghe nhạc với tone màu hồng hiện đại.</p>
+</div>
 </body>
-</html> 
+</html>

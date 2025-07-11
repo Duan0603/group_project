@@ -2,19 +2,23 @@ package controller;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 import java.io.IOException;
+import model.User;
 
-@WebServlet(name = "HomeServlet", urlPatterns = {"/home"})
+@WebServlet(name = "HomeServlet", urlPatterns = {"/", "/home"})
 public class HomeServlet extends HttpServlet {
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    protected void doGet(HttpServletRequest request,
+                         HttpServletResponse response)
             throws ServletException, IOException {
-        // Ở đây bạn có thể load danh sách bài hát từ DB và set vào request
 
-        request.getRequestDispatcher("/WEB-INF/views/home.jsp").forward(request, response);
+        HttpSession session = request.getSession(false);
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
 
+        request.setAttribute("user", user);
+
+        request.getRequestDispatcher("/WEB-INF/views/home.jsp")
+                .forward(request, response);
     }
-} 
+}
