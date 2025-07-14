@@ -15,7 +15,7 @@ import java.util.Properties;
 public final class MailUtil {
 
     private static final String SENDER_EMAIL = "tunguyencao11925@gmail.com";
-    private static final String APP_PASSWORD = "your-pass-here";
+    private static final String APP_PASSWORD = "cyri yxal dmfu rqbj";
 
     private static Session createSession() {
 
