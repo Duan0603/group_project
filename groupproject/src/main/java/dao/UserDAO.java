@@ -157,4 +157,16 @@ public class UserDAO extends DBContext {
             System.out.println("Update reset token error: " + e.getMessage());
         }
     }
+
+    public void updateProvider(String email, String newProvider) {
+    String sql = "UPDATE Users SET Provider = ? WHERE Email = ?";
+    try (PreparedStatement st = connection.prepareStatement(sql)) {
+        st.setString(1, newProvider);
+        st.setString(2, email);
+        st.executeUpdate();
+        System.out.println("Provider updated to: " + newProvider);
+    } catch (SQLException e) {
+        System.out.println("Update provider error: " + e.getMessage());
+    }
+}
 }
