@@ -112,13 +112,13 @@
                     <input type="text" maxlength="1" name="digit6" required autocomplete="off" inputmode="numeric">
                 </div>
                 <input type="hidden" name="otp" id="otpField">
-                
+
                 <% if (request.getAttribute("error") != null) {%>
                 <div class="alert alert-danger text-center mb-3" style="font-size: 0.9rem;">
                     <%= request.getAttribute("error")%>
                 </div>
                 <% }%>
-                
+
                 <button type="submit" class="btn btn-pink">Xác nhận</button>
                 <a href="#" class="resend-link">Chưa nhận được mã? Gửi lại</a>
             </form>
