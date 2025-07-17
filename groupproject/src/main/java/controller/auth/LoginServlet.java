@@ -71,12 +71,16 @@ public class LoginServlet extends HttpServlet {
         if (user != null) {
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
+            if ("ADMIN".equalsIgnoreCase(user.getRole())) {
+                request.getRequestDispatcher("/WEB-INF/views/admin.jsp").forward(request, response);
+            } else {
 
-            if (rememberMe != null) {
-                addRememberMeCookies(response, usernameOrEmail, password);
+                if (rememberMe != null) {
+                    addRememberMeCookies(response, usernameOrEmail, password);
+                }
+
+                response.sendRedirect(request.getContextPath() + "/home");
             }
-
-            response.sendRedirect(request.getContextPath() + "/home");
         } else {
             request.setAttribute("error", "Sai tên đăng nhập hoặc mật khẩu!");
             request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);
