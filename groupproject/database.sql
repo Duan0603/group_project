@@ -18,6 +18,16 @@ CREATE TABLE Users (
     Status BIT DEFAULT 1
 );
 
+ALTER TABLE Users
+ADD Reset_token VARCHAR(255);
+ALTER TABLE Users ADD Reset_token_expiry VARCHAR(255);
+
+ALTER TABLE Users ADD Provider VARCHAR(20) DEFAULT 'local';
+ALTER TABLE Users ADD GoogleID VARCHAR(50);
+ALTER TABLE Users ADD FacebookID VARCHAR(100);
+ALTER TABLE Users DROP COLUMN FullName;
+ALTER TABLE Users
+ALTER COLUMN Username NVARCHAR(50) NOT NULL;
 -- Artists table (extends Users)
 CREATE TABLE Artists (
     artistId INT PRIMARY KEY,
@@ -93,8 +103,8 @@ CREATE TABLE ListeningHistory (
 );
 
 -- Insert sample admin user (password: admin123)
-INSERT INTO Users (Username, Password, Email, FullName, Role)
-VALUES ('admin', 'e5a7c3966d99ffa96e2d39e0c5bdcee2', 'admin@music.com', 'System Admin', 'ADMIN');
+INSERT INTO Users (Username, Password, Email, Role)
+VALUES ('admin', 'sa', 'admin@music.com', 'ADMIN');
 
 -- Insert sample genres
 INSERT INTO Songs (Title, Artist, Album, Genre, Duration) VALUES
@@ -225,3 +235,36 @@ VALUES
 (N'2022', N'W/n', N'W/n', N'Nhạc Trẻ, Pop', 200, '2022-01-01', '/songs/2022-WN.mp3', '/coverImages/wn.png'),
 (N'3107_4', N'W/n', N'W/n', N'Nhạc Trẻ, R&B', 213, '2019-07-31', '/songs/3107_4-WN.mp3', '/coverImages/wn.png'),
 (N'3107_3', N'W/n', N'W/n', N'Nhạc Trẻ, R&B', 235, '2019-07-30', '/songs/3107_3-WN.mp3', '/coverImages/wn.png');
+
+BEGIN TRY
+    BEGIN TRAN;  -- Bắt đầu giao dịch
+
+    -- 1. Tìm và xóa constraint UNIQUE hiện có trên Username
+    DECLARE @uq_name sysname;
+    SELECT @uq_name = kc.name
+    FROM sys.key_constraints kc
+    INNER JOIN sys.tables t ON kc.parent_object_id = t.object_id
+    WHERE t.name = 'Users' AND kc.[type] = 'UQ';
+
+    IF @uq_name IS NOT NULL
+    BEGIN
+       DECLARE @sql NVARCHAR(MAX);
+SET @sql = N'ALTER TABLE Users DROP CONSTRAINT ' + QUOTENAME(@uq_name);
+EXEC sp_executesql @sql;
+    END
+
+    -- 2. Đổi kiểu Username sang NVARCHAR(50)
+    ALTER TABLE Users
+    ALTER COLUMN Username NVARCHAR(50) NOT NULL;
+
+    -- 3. Thêm lại UNIQUE constraint rõ ràng
+    ALTER TABLE Users
+    ADD CONSTRAINT UQ_Users_Username UNIQUE (Username);
+
+    COMMIT TRAN;
+    PRINT N' Đã đổi Username sang NVARCHAR(50) và thêm lại UNIQUE thành công.';
+END TRY
+BEGIN CATCH
+    ROLLBACK TRAN;
+    PRINT N' Lỗi: ' + ERROR_MESSAGE();
+END CATCH;
