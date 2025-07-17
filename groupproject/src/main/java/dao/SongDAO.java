@@ -71,6 +71,27 @@ public class SongDAO {
         return songs;
     }
     
+    public Songs getSongById(int songId) {
+    String sql = "SELECT * FROM Songs WHERE SongID = ?";
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, songId);
+        ResultSet rs = stmt.executeQuery();
+        if (rs.next()) {
+            Songs song = new Songs();
+            song.setSongID(rs.getInt("SongID"));
+            song.setTitle(rs.getString("Title"));
+            song.setArtist(rs.getString("Artist")); // tuỳ theo model
+            song.setDuration(rs.getInt("Duration"));
+            song.setFilePath(rs.getString("FilePath"));
+            // Thêm các field khác nếu cần
+            return song;
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return null;
+}
+    
 public Songs getSongByTitle(String title) {
     String sql = "SELECT * FROM Songs WHERE title COLLATE Vietnamese_CI_AI = ?";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -151,6 +172,28 @@ public List<Songs> getSongsByGenres(Set<String> genres, int excludeSongId) {
 
     return songs;
 }
+
+public List<Songs> getSongsByPlaylistId(int playlistId) {
+    List<Songs> songs = new ArrayList<>();
+    String sql = "SELECT s.* FROM Songs s " +
+                 "JOIN PlaylistSongs ps ON s.SongID = ps.SongID " +
+                 "WHERE ps.PlaylistID = ? AND s.Status = 1"; // Sử dụng điều kiện status = 1 để chỉ lấy các bài hát còn hoạt động
+
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, playlistId);
+        ResultSet rs = stmt.executeQuery();
+
+        // Duyệt qua kết quả và thêm bài hát vào danh sách
+        while (rs.next()) {
+            songs.add(mapResultSetToSong(rs)); // Dùng phương thức mapResultSetToSong để ánh xạ kết quả từ ResultSet
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+    return songs;
+}
+
 public List<Songs> getSongsByArtist(String artistName) {
     List<Songs> songs = new ArrayList<>();
     String normalizedInput = normalize(artistName); // normalize là hàm xử lý viết hoa/thường/dấu

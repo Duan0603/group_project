@@ -241,7 +241,7 @@
         </div>
         <script>
             
-         function showPlaylistMenu(event, songId) {
+       function showPlaylistMenu(event, songId) {
     event.stopPropagation();
     const menu = document.getElementById('playlistMenu');
     menu.style.display = 'block';
@@ -256,31 +256,87 @@
     menu.style.left = left + 'px';
     menu.style.top = window.scrollY + btnRect.top + 'px';
 
-    // 👇 FETCH playlist từ servlet
+    const container = document.getElementById('playlistList');
+    container.innerHTML = '<div style="color:#aaa;font-size:14px;margin-bottom:6px;">Đang tải danh sách...</div>';
+
+    // 🔁 Gọi API playlist đã tạo
     fetch('<%= request.getContextPath() %>/playlist?action=getUserPlaylists')
         .then(res => res.json())
-        .then(data => {
-            const container = document.getElementById('playlistList');
-            container.innerHTML = '';
-            data.forEach(p => {
-    const item = document.createElement('div');
-    item.textContent = p.name;
-    item.style.cursor = 'pointer';
-    item.style.padding = '4px 0';
+        .then(playlists => {
+            // Tiếp tục gọi API kiểm tra bài hát đã có trong playlist nào
+            return fetch('<%= request.getContextPath() %>/playlist?action=getPlaylistsContainingSong&songId=' + songId)
+                .then(res => res.json())
+                .then(existingPlaylistIds => {
+                    renderSidebarPlaylistsInPopup(songId);
+                    container.innerHTML = '';
 
-    // 💡 Chỉ khi user click vào playlist mới add nhạc
-    item.onclick = () => {
-        addSongToPlaylist(p.playlistId, songId);
-        menu.style.display = 'none';
-    };
+                    playlists.forEach(p => {
+                        const item = document.createElement('div');
+                        item.textContent = p.name;
+                        item.style.cursor = 'pointer';
+                        item.style.padding = '6px 0';
+                        item.style.borderBottom = '1px solid #444';
+                        item.style.display = 'flex';
+                        item.style.justifyContent = 'space-between';
+                        item.style.alignItems = 'center';
 
-    container.appendChild(item);
-});
-        }).catch(err => {
+                        // 👁️ Highlight nếu bài hát đã có trong playlist
+                        const isAdded = existingPlaylistIds.includes(p.playlistID || p.playlistId);
+                        if (isAdded) {
+                            item.style.opacity = '0.5';
+                            item.style.pointerEvents = 'none';
+                            const checkIcon = document.createElement('span');
+                            checkIcon.textContent = '✔️';
+                            checkIcon.style.fontSize = '14px';
+                            checkIcon.style.marginLeft = '6px';
+                            item.appendChild(checkIcon);
+                        } else {
+                            item.onclick = () => {
+                                addSongToPlaylist(p.playlistID || p.playlistId, songId);
+                                menu.style.display = 'none';
+                            };
+                        }
+
+                        container.appendChild(item);
+                    });
+                });
+        })
+        .catch(err => {
             console.error('Lỗi load playlist:', err);
+            container.innerHTML = '<div style="color:red;">Không thể tải playlist</div>';
         });
 }
 
+function renderSidebarPlaylistsInPopup(songId) {
+    fetch('<%= request.getContextPath() %>/playlist?action=getUserPlaylists')
+        .then(res => res.json())
+        .then(playlists => {
+            const container = document.getElementById('sidebarPlaylists');
+            container.innerHTML = '';
+
+            if (!playlists || playlists.length === 0) {
+                container.innerHTML = '<div style="color:#777;">Không có playlist nào.</div>';
+                return;
+            }
+
+            playlists.forEach(p => {
+                const div = document.createElement('div');
+                div.textContent = p.name;
+                div.style.padding = '6px';
+                div.style.cursor = 'pointer';
+                div.style.borderRadius = '4px';
+                div.style.transition = '0.2s';
+                div.style.color = '#fff';
+                div.onmouseenter = () => div.style.background = '#333';
+                div.onmouseleave = () => div.style.background = 'transparent';
+                div.onclick = () => {
+                    addSongToPlaylist(p.playlistId || p.playlistID, songId);
+                    document.getElementById('playlistMenu').style.display = 'none';
+                };
+                container.appendChild(div);
+            });
+        });
+}
     function filterPlaylist(keyword) {
         const items = document.querySelectorAll('#playlistList div');
         items.forEach(item => {
@@ -417,15 +473,13 @@ function createNewPlaylistFromInput() {
     <!-- Danh sách các playlist -->
     <div id="playlistList" style="max-height: 150px; overflow-y: auto; margin-bottom: 12px;"></div>
 
-    <!-- Tạo mới playlist nếu muốn -->
-    <div style="border-top: 1px solid #444; padding-top: 8px;">
-        <input type="text" id="newPlaylistName" placeholder="Tên playlist mới..." 
-               style="width: 100%; padding: 4px; margin-bottom: 6px; border-radius: 4px;">
-        <button onclick="createNewPlaylistFromInput()" 
-                style="width: 100%; padding: 6px; background: #1DB954; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer;">
-            + Tạo mới playlist
-        </button>
+<!-- Thêm vào playlist -->
+<div style="border-top: 1px solid #444; padding-top: 8px;">
+    <div style="color: #aaa; margin-bottom: 6px;">➕ Thêm vào playlist đã tạo</div>
+    <div id="sidebarPlaylists" style="max-height: 140px; overflow-y: auto;">
+        <!-- Playlist user sẽ được render tại đây bằng JS -->
     </div>
+</div>
 </div>
     </body>
 </html>

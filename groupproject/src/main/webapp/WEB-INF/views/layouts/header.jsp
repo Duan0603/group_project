@@ -115,6 +115,16 @@
         justify-content: center;
         cursor: pointer;
     }
+    
+    .dropdown-item.logout-item {
+    color: white !important;
+    font-weight: 500;
+}
+
+.dropdown-item.logout-item:hover {
+    background-color: #e84393;
+    color: white !important;
+}
 </style>
 
 <nav class="navbar navbar-expand-lg px-3">
@@ -150,8 +160,14 @@
                     <button class="icon-btn" title="Thông báo">
                         <i class="fas fa-bell"></i>
                     </button>
-                    <div class="user-avatar" title="${user.username}"><%= avatarInitial %></div>
-                </c:when>
+       <div class="dropdown">
+    <div class="user-avatar" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false" title="${user.username}" style="cursor: pointer;">
+        <%= avatarInitial %>
+    </div>
+    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end mt-2" aria-labelledby="userMenu">
+       <li><a class="dropdown-item logout-item" href="${pageContext.request.contextPath}/logout">Đăng xuất</a></li>
+    </ul>
+</div>               </c:when>
                 <c:otherwise>
                     <!-- Nếu chưa đăng nhập thì hiện nút đăng nhập -->
                     <a class="btn btn-light text-dark btn-pill" href="${pageContext.request.contextPath}/login">Đăng&nbsp;nhập</a>
