@@ -172,7 +172,9 @@
                 </li>
             </c:if>
             <a class="nav-link" href="#">Hỗ&nbsp;trợ</a>
-            <a class="nav-link" href="${pageContext.request.contextPath}/signup">Đăng&nbsp;ký</a>
+            <c:if test="${user == null}">
+                <a class="nav-link" href="${pageContext.request.contextPath}/signup">Đăng&nbsp;ký</a>
+            </c:if>
 
             <c:choose>
                 <c:when test="${user != null}">

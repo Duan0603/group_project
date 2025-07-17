@@ -18,7 +18,7 @@ public class GoogleOtpVerifyServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
-        req.getRequestDispatcher("/WEB-INF/views/auth/verify-otp.jsp").forward(req, res);
+        req.getRequestDispatcher("/WEB-INF/views/auth/verify_otp.jsp").forward(req, res);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class GoogleOtpVerifyServlet extends HttpServlet {
             res.sendRedirect(req.getContextPath() + "/home");
         } else {
             req.setAttribute("error", "Mã OTP sai hoặc đã hết hạn!");
-            req.getRequestDispatcher("/WEB-INF/views/auth/verify-otp.jsp").forward(req, res);
+            req.getRequestDispatcher("/WEB-INF/views/auth/verify_otp.jsp").forward(req, res);
         }
     }
 }

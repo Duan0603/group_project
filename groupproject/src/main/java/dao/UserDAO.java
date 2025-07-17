@@ -13,6 +13,7 @@ public class UserDAO extends DBContext {
             st.setString(1, usernameOrEmail);
             st.setString(2, usernameOrEmail);
             st.setString(3, password);
+            
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
                 return extractUser(rs);
@@ -80,6 +81,7 @@ public class UserDAO extends DBContext {
         user.setProvider(rs.getString("Provider"));
         user.setGoogleID(rs.getString("GoogleID"));
         user.setFacebookID(rs.getString("FacebookID"));
+        user.setPremium(rs.getBoolean("Premium"));
         return user;
     }
 
