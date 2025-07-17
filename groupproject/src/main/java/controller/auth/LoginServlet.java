@@ -68,19 +68,18 @@ public class LoginServlet extends HttpServlet {
         UserDAO userDAO = new UserDAO();
         User user = userDAO.login(usernameOrEmail, password);
 
-       if (user != null) {
+        if (user != null) {
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
             if ("ADMIN".equalsIgnoreCase(user.getRole())) {
                 request.getRequestDispatcher("/WEB-INF/views/admin.jsp").forward(request, response);
             } else {
-                response.sendRedirect(request.getContextPath() + "/home"); // Chuyển hướng về trang chủ
 
                 if (rememberMe != null) {
                     addRememberMeCookies(response, usernameOrEmail, password);
                 }
 
-                response.sendRedirect(request.getContextPath() + "/home");
+                request.getRequestDispatcher("/WEB-INF/views/home.jsp").forward(request, response);
             }
         } else {
             request.setAttribute("error", "Sai tên đăng nhập hoặc mật khẩu!");
