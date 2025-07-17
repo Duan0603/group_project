@@ -15,6 +15,7 @@ CREATE TABLE Users (
                        CreatedDate DATETIME DEFAULT GETDATE(),
                        LastLogin DATETIME,
                        Status BIT DEFAULT 1,
+                       Premium BIT DEFAULT 0
 );
 
 ALTER TABLE Users
