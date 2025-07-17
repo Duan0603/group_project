@@ -31,10 +31,11 @@ public class PayOSReturnServlet extends HttpServlet {
             userDAO.setPremium(user.getUserId(), true);
             user.setPremium(true);
             session.setAttribute("user", user);
-            request.setAttribute("message", "Thanh toán thành công! Tài khoản của bạn đã được nâng cấp Premium.");
+            response.sendRedirect(request.getContextPath() + "/home?premium=success");
+            return;
         } else {
-            request.setAttribute("error", "Thanh toán thất bại hoặc bị hủy. Vui lòng thử lại.");
+            response.sendRedirect(request.getContextPath() + "/home?premium=fail");
+            return;
         }
-        request.getRequestDispatcher("/WEB-INF/views/auth/premium_result.jsp").forward(request, response);
     }
 } 

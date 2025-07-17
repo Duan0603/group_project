@@ -114,8 +114,23 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
+        position: relative;
     }
     
+    .user-avatar.premium {
+        border: 3px solid #a259ff;
+        box-shadow: 0 0 0 4px #e0c3fc;
+    }
+
+    .user-avatar .fa-crown {
+        color: #a259ff;
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 18px;
+    }
+
     .dropdown-item.logout-item {
     color: white !important;
     font-weight: 500;
@@ -149,31 +164,38 @@
 
         <!-- Menu bên phải -->
         <div class="d-flex align-items-center gap-2 flex-shrink-0 flex-wrap">
-
-            <li class="nav-item">
-                <form action="payos-premium" method="get" style="display:inline;">
-                    <button type="submit" class="btn btn-warning" style="margin-left: 10px;">Premium</button>
-                </form>
-            </li>
+            <c:if test="${user != null && !user.premium}">
+                <li class="nav-item">
+                    <form action="payos-premium" method="get" style="display:inline;">
+                        <button type="submit" class="btn btn-warning" style="margin-left: 10px;">Premium</button>
+                    </form>
+                </li>
+            </c:if>
             <a class="nav-link" href="#">Hỗ&nbsp;trợ</a>
             <a class="nav-link" href="${pageContext.request.contextPath}/signup">Đăng&nbsp;ký</a>
 
             <c:choose>
                 <c:when test="${user != null}">
-                    <!-- Nếu đã đăng nhập thì hiện chuông + avatar -->
                     <button class="icon-btn" title="Thông báo">
                         <i class="fas fa-bell"></i>
                     </button>
-       <div class="dropdown">
-    <div class="user-avatar" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false" title="${user.username}" style="cursor: pointer;">
-        <%= avatarInitial %>
-    </div>
-    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end mt-2" aria-labelledby="userMenu">
-       <li><a class="dropdown-item logout-item" href="${pageContext.request.contextPath}/logout">Đăng xuất</a></li>
-    </ul>
-</div>               </c:when>
+                    <div class="dropdown">
+                        <div class="user-avatar${user.premium ? ' premium' : ''}"
+                             id="userMenu"
+                             data-bs-toggle="dropdown"
+                             aria-expanded="false"
+                             title="${user.username}">
+                            <c:if test='${user.premium}'>
+                                <i class="fas fa-crown"></i>
+                            </c:if>
+                            <%= avatarInitial %>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end mt-2" aria-labelledby="userMenu">
+                            <li><a class="dropdown-item logout-item" href="${pageContext.request.contextPath}/logout">Đăng xuất</a></li>
+                        </ul>
+                    </div>
+                </c:when>
                 <c:otherwise>
-                    <!-- Nếu chưa đăng nhập thì hiện nút đăng nhập -->
                     <a class="btn btn-light text-dark btn-pill" href="${pageContext.request.contextPath}/login">Đăng&nbsp;nhập</a>
                 </c:otherwise>
             </c:choose>

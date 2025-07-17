@@ -8,21 +8,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.User;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
+import vn.payos.PayOS;
+import vn.payos.type.CheckoutResponseData;
+import vn.payos.type.PaymentData;
+import vn.payos.type.ItemData;
 
 @WebServlet(name = "PayOSPaymentServlet", urlPatterns = {"/payos-premium"})
 public class PayOSPaymentServlet extends HttpServlet {
+    // TỐT NHẤT: Nên đưa các giá trị này vào file cấu hình hoặc biến môi trường
     private static final String CLIENT_ID = "68a4f6f8-8542-4156-8f82-3591de822349";
     private static final String API_KEY = "bdef7c04-8333-40cf-a6b1-d4159d7f04c2";
     private static final String CHECKSUM_KEY = "5e5262b736e7c08161fe2e122aa3e97877ec4d4a02713edac8e43cf0e88d705d";
-    private static final String PAYOS_ENDPOINT = "https://api.payos.vn/v2/payment-requests";
-    private static final String RETURN_URL = "https://my.payos.vn/d2325fce630711f094d10242ac110002/create-payment-link";
-    private static final String PREMIUM_DESCRIPTION = "Nâng cấp tài khoản Premium";
-    private static final int PREMIUM_PRICE = 50000; // Giá premium (VND)
+    private static final int PREMIUM_PRICE = 20000; // Giá premium (VND)
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -33,57 +30,52 @@ public class PayOSPaymentServlet extends HttpServlet {
             return;
         }
 
-        // Tạo orderId duy nhất cho mỗi giao dịch
-        String orderId = UUID.randomUUID().toString();
-        String orderInfo = PREMIUM_DESCRIPTION + " cho user " + user.getUsername();
+        try {
+            // Khởi tạo PayOS SDK
+            PayOS payOS = new PayOS(CLIENT_ID, API_KEY, CHECKSUM_KEY);
 
-        // Tạo JSON body cho PayOS
-        String jsonBody = "{" +
-                "\"orderCode\": \"" + orderId + "\"," +
-                "\"amount\": " + PREMIUM_PRICE + "," +
-                "\"description\": \"" + orderInfo + "\"," +
-                "\"returnUrl\": \"" + RETURN_URL + "\"," +
-                "\"cancelUrl\": \"" + RETURN_URL + "\"}";
+            // orderCode phải là số duy nhất (long).
+            // Tạm thời vẫn dùng currentTimeMillis, nhưng nên có giải pháp tốt hơn.
+            long orderCode = System.currentTimeMillis();
 
-        // Gửi request tạo payment link tới PayOS
-        URL url = new URL(PAYOS_ENDPOINT);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("x-client-id", CLIENT_ID);
-        conn.setRequestProperty("x-api-key", API_KEY);
-        conn.setDoOutput(true);
+            // IMPORTANT: Xây dựng URL trả về động dựa trên request hiện tại.
+            // Bạn cần tạo các Servlet/endpoint để xử lý các URL này.
+            String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
+            String returnUrl = baseUrl + "/payos-return"; // Endpoint xử lý khi thành công
+            String cancelUrl = baseUrl + "/payos-return"; // Khi hủy đơn hàng, chuyển về trang chủ
 
-        try (OutputStream os = conn.getOutputStream()) {
-            byte[] input = jsonBody.getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
+            // Tạo item cho đơn hàng
+            ItemData item = ItemData.builder()
+                .name("Nâng cấp Premium cho " + user.getUsername())
+                .quantity(1)
+                .price(PREMIUM_PRICE)
+                .build();
+
+            // Tạo PaymentData
+            PaymentData paymentData = PaymentData.builder()
+                .orderCode(orderCode)
+                .amount(PREMIUM_PRICE)
+                .description("Prenium for: " + user.getUserId()) // Mô tả không dấu để tránh lỗi encoding
+                .returnUrl(returnUrl)
+                .cancelUrl(cancelUrl)
+                .item(item)
+                .buyerName(user.getUsername()) // Thêm thông tin người mua (tùy chọn nhưng nên có)
+                .buyerEmail(user.getEmail()) // Thêm thông tin người mua (tùy chọn nhưng nên có)
+                .build();
+
+            // Tạo link thanh toán
+            CheckoutResponseData result = payOS.createPaymentLink(paymentData);
+            String paymentUrl = result.getCheckoutUrl();
+
+            // Chuyển hướng người dùng đến cổng thanh toán PayOS
+            response.sendRedirect(paymentUrl);
+
+        } catch (Exception e) {
+            // In lỗi ra console để debug
+            System.err.println("Lỗi khi tạo link thanh toán PayOS: " + e.getMessage());
+            e.printStackTrace();
+            // Chuyển hướng về trang chủ với thông báo lỗi
+            response.sendRedirect(request.getContextPath() + "/home?error=payos_failed");
         }
-
-        int status = conn.getResponseCode();
-        if (status == 200 || status == 201) {
-            // Đọc response để lấy paymentUrl
-            java.util.Scanner s = new java.util.Scanner(conn.getInputStream()).useDelimiter("\\A");
-            String result = s.hasNext() ? s.next() : "";
-            s.close();
-            // Trích xuất paymentUrl từ JSON (đơn giản, không dùng thư viện JSON)
-            String paymentUrl = null;
-            int idx = result.indexOf("paymentUrl");
-            if (idx != -1) {
-                int start = result.indexOf('"', idx + 12) + 1;
-                int end = result.indexOf('"', start);
-                paymentUrl = result.substring(start, end);
-            }
-            if (paymentUrl != null) {
-                response.sendRedirect(paymentUrl);
-                return;
-            }
-        } else {
-            java.util.Scanner s = new java.util.Scanner(conn.getErrorStream()).useDelimiter("\\A");
-            String errorResult = s.hasNext() ? s.next() : "";
-            s.close();
-            System.out.println("PayOS error: " + errorResult);
-        }
-        // Nếu lỗi, chuyển về trang lỗi
-        response.sendRedirect(request.getContextPath() + "/home?error=payos_failed");
     }
-} 
+}
