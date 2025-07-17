@@ -165,9 +165,9 @@
         <!-- Menu bên phải -->
         <div class="d-flex align-items-center gap-2 flex-shrink-0 flex-wrap">
             <c:if test="${user != null && !user.premium}">
-                <li class="nav-item">
+                <li class="nav-item" style="list-style: none; margin: 0; padding: 0;">
                     <form action="payos-premium" method="get" style="display:inline;">
-                        <button type="submit" class="btn btn-warning" style="margin-left: 10px;">Premium</button>
+                        <button type="submit" class="btn" style="margin-left: 10px; background-color: #e84393; color: #fff; font-weight: bold; border: none;">Premium</button>
                     </form>
                 </li>
             </c:if>

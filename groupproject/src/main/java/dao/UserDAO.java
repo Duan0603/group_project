@@ -158,14 +158,14 @@ public class UserDAO extends DBContext {
         }
     }
 
-    public void setPremium(int userId, boolean premium) {
-        String sql = "UPDATE Users SET Premium = ? WHERE UserID = ?";
+    public void setPremiumAndDate(int userId, boolean premium) {
+        String sql = "UPDATE Users SET Premium = ?, PremiumDate = GETDATE() WHERE UserID = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setBoolean(1, premium);
             st.setInt(2, userId);
             st.executeUpdate();
         } catch (SQLException e) {
-            System.out.println("Update premium error: " + e.getMessage());
+            System.out.println("Update premium and date error: " + e.getMessage());
         }
     }
 }

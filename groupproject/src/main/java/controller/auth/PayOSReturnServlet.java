@@ -28,9 +28,10 @@ public class PayOSReturnServlet extends HttpServlet {
         if ("PAID".equalsIgnoreCase(status) || "SUCCESS".equalsIgnoreCase(status)) {
             // Cập nhật trạng thái premium cho user
             UserDAO userDAO = new UserDAO();
-            userDAO.setPremium(user.getUserId(), true);
+            // userDAO.setPremium(user.getUserId(), true);
             user.setPremium(true);
             session.setAttribute("user", user);
+            userDAO.setPremiumAndDate(user.getUserId(), true);
             response.sendRedirect(request.getContextPath() + "/home?premium=success");
             return;
         } else {

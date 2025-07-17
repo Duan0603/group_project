@@ -14,6 +14,7 @@ public class User {
     private String resetToken;
     private String resetTokenExpiry;
     private boolean premium;
+    private java.util.Date premiumDate;
 
     public User() {
     }
@@ -125,6 +126,14 @@ public class User {
 
     public void setPremium(boolean premium) {
         this.premium = premium;
+    }
+
+    public java.util.Date getPremiumDate() {
+        return premiumDate;
+    }
+
+    public void setPremiumDate(java.util.Date premiumDate) {
+        this.premiumDate = premiumDate;
     }
 
 }

@@ -20,7 +20,8 @@ Provider VARCHAR(20) DEFAULT 'local',
 GoogleID VARCHAR(50),
 FacebookID VARCHAR(100),
                        Status BIT DEFAULT 1,
-                       Premium BIT DEFAULT 0
+                       Premium BIT DEFAULT 0,
+                       PremiumDate DATETIME NULL
 );
 
 -- Artists table (extends Users)
