@@ -14,20 +14,14 @@ CREATE TABLE Users (
                        Role VARCHAR(20) DEFAULT 'USER',
                        CreatedDate DATETIME DEFAULT GETDATE(),
                        LastLogin DATETIME,
+Reset_token VARCHAR(255),
+Reset_token_expiry VARCHAR(255),
+Provider VARCHAR(20) DEFAULT 'local',
+GoogleID VARCHAR(50),
+FacebookID VARCHAR(100),
                        Status BIT DEFAULT 1,
                        Premium BIT DEFAULT 0
 );
-
-ALTER TABLE Users
-    ADD Reset_token VARCHAR(255);
-ALTER TABLE Users ADD Reset_token_expiry VARCHAR(255);
-
-ALTER TABLE Users ADD Provider VARCHAR(20) DEFAULT 'local';
-ALTER TABLE Users ADD GoogleID VARCHAR(50);
-ALTER TABLE Users ADD FacebookID VARCHAR(100);
-ALTER TABLE Users DROP COLUMN FullName;
-ALTER TABLE Users
-    ALTER COLUMN Username NVARCHAR(50) NOT NULL;
 
 -- Artists table (extends Users)
 CREATE TABLE Artists (
