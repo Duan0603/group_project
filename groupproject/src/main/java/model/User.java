@@ -13,11 +13,12 @@ public class User {
     private String facebookID;
     private String resetToken;
     private String resetTokenExpiry;
+    private boolean premium;
 
     public User() {
     }
 
-    public User(int userId, String username, String password, String email, String role, boolean status, String provider, String googleID, String facebookID) {
+    public User(int userId, String username, String password, String email, String role, boolean status, String provider, String googleID, String facebookID, boolean premium) {
         this.userId = userId;
         this.username = username;
         this.password = password;
@@ -27,6 +28,7 @@ public class User {
         this.provider = provider;
         this.googleID = googleID;
         this.facebookID = facebookID;
+        this.premium = premium;
     }
 
     public int getUserId() {
@@ -115,6 +117,14 @@ public class User {
 
     public void setResetTokenExpiry(String resetTokenExpiry) {
         this.resetTokenExpiry = resetTokenExpiry;
+    }
+
+    public boolean isPremium() {
+        return premium;
+    }
+
+    public void setPremium(boolean premium) {
+        this.premium = premium;
     }
 
 }
