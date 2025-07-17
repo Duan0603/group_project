@@ -334,5 +334,46 @@ public static String toImageFileName(String title) {
         return "default.jpg"; // Fallback on error
     }
 }
+// cua admin
+    public int countTotalSongs() {
+    String sql = "SELECT COUNT(*) FROM Songs WHERE Status = 1";
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1);
+        }
+    } catch (SQLException e) {
+        System.out.println("Count songs error: " + e.getMessage());
+    }
+    return 0;
+    }
+    
+    public boolean addSong(Songs song) {
+        String sql = "INSERT INTO Songs (Title, Artist, Album, Genre, Duration, ReleaseDate, FilePath, CoverImage, Status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, song.getTitle());
+            ps.setString(2, song.getArtist());
+            ps.setString(3, song.getAlbum());
+            ps.setString(4, song.getGenre());
+            ps.setInt(5, song.getDuration());
+            ps.setDate(6, song.getReleaseDate());
+            ps.setString(7, song.getFilePath());
+            ps.setString(8, song.getCoverImage());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("Add song error: " + e.getMessage());
+            return false;
+        }
+    }
 
+    public boolean deleteSong(int songId) {
+        String sql = "UPDATE Songs SET Status = 0 WHERE SongID = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, songId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("Delete song error: " + e.getMessage());
+            return false;
+        }
+    }
 }

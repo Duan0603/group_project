@@ -4,6 +4,8 @@ import java.sql.*;
 import model.User;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserDAO extends DBContext {
 
@@ -153,6 +155,99 @@ public class UserDAO extends DBContext {
             st.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Update reset token error: " + e.getMessage());
+        }
+    }
+    
+    //cua admin
+    public int countTotalUsers() {
+    String sql = "SELECT COUNT(*) FROM Users";
+    try (PreparedStatement st = connection.prepareStatement(sql)) {
+        ResultSet rs = st.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1);
+        }
+    } catch (SQLException e) {
+        System.out.println("Count users error: " + e.getMessage());
+    }
+    return 0;
+}
+
+public List<User> getAllUsers() {
+    List<User> userList = new ArrayList<>();
+    String sql = "SELECT * FROM Users ORDER BY UserID";
+    try (PreparedStatement st = connection.prepareStatement(sql)) {
+        ResultSet rs = st.executeQuery();
+        while (rs.next()) {
+            userList.add(extractUser(rs)); 
+        }
+    } catch (SQLException e) {
+        System.out.println("Get all users error: " + e.getMessage());
+    }
+    return userList;
+}
+
+public boolean updateUser(User user) {
+        String sql = "UPDATE Users SET Username = ?, Email = ?, Role = ? WHERE UserID = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, user.getUsername());
+            st.setString(2, user.getEmail());
+            st.setString(3, user.getRole());
+            st.setInt(4, user.getUserId());
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("Update user error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean updateUserStatus(int userId, boolean newStatus) {
+        String sql = "UPDATE Users SET Status = ? WHERE UserID = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setBoolean(1, newStatus);
+            st.setInt(2, userId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("Update user status error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean deleteUser(int userId) {
+        String[] deleteStatements = {
+            "DELETE FROM PlaylistSongs WHERE PlaylistID IN (SELECT PlaylistID FROM Playlists WHERE UserID = ?)",
+            "DELETE FROM Playlists WHERE UserID = ?",
+            "DELETE FROM UserFavorites WHERE UserID = ?",
+            "DELETE FROM ListeningHistory WHERE UserID = ?",
+            "DELETE FROM Follows WHERE followerId = ? OR followedId = ?",
+            "DELETE FROM Users WHERE UserID = ?"
+        };
+
+        try {
+            connection.setAutoCommit(false);
+
+            try (PreparedStatement st1 = connection.prepareStatement(deleteStatements[0])) { st1.setInt(1, userId); st1.executeUpdate(); }
+            try (PreparedStatement st2 = connection.prepareStatement(deleteStatements[1])) { st2.setInt(1, userId); st2.executeUpdate(); }
+            try (PreparedStatement st3 = connection.prepareStatement(deleteStatements[2])) { st3.setInt(1, userId); st3.executeUpdate(); }
+            try (PreparedStatement st4 = connection.prepareStatement(deleteStatements[3])) { st4.setInt(1, userId); st4.executeUpdate(); }
+            try (PreparedStatement st5 = connection.prepareStatement(deleteStatements[4])) { st5.setInt(1, userId); st5.setInt(2, userId); st5.executeUpdate(); }
+            try (PreparedStatement st6 = connection.prepareStatement(deleteStatements[5])) { st6.setInt(1, userId); st6.executeUpdate(); }
+
+            connection.commit();
+            return true;
+        } catch (SQLException e) {
+            System.out.println("Delete user error: " + e.getMessage());
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                System.out.println("Rollback error: " + ex.getMessage());
+            }
+            return false;
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                System.out.println("Set auto-commit error: " + e.getMessage());
+            }
         }
     }
 }
