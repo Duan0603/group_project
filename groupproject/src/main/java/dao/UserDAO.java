@@ -168,7 +168,9 @@ public class UserDAO extends DBContext {
             st.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Update premium and date error: " + e.getMessage());
-            //cua admin
+        }
+    }
+    //cua admin
             public int countTotalUsers() {
                 String sql = "SELECT COUNT(*) FROM Users";
                 try (PreparedStatement st = connection.prepareStatement(sql)) {
@@ -260,4 +262,4 @@ public class UserDAO extends DBContext {
                     }
                 }
             }
-        }
+}
