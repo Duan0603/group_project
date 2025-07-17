@@ -847,13 +847,13 @@
                                 for (String[] album : albums) {
                                     String defaultSongTitle = album[1];
                             %>
-                            <div class="card">
+                            <div class="card" data-album="<%= album[1] %>">
                                 <a href="${pageContext.request.contextPath}/hot-trend?name=<%= URLEncoder.encode(album[1], "UTF-8") %>&cover=<%= URLEncoder.encode(album[0], "UTF-8") %>">
                                     <img src="albumImages/<%= album[0] %>" alt="<%= album[1] %>" onerror="this.src='albumImages/default.jpg';">
                                 </a>
                                 <div class="card-title"><%= album[1] %></div>
                                 <div class="card-subtitle"><%= album[2] %></div>
-                                <button class="play-button" onclick="playFirstSong('<%= URLEncoder.encode(defaultSongTitle, "UTF-8") %>', '<%= URLEncoder.encode(album[1], "UTF-8") %>')">
+                                <button class="play-button" onclick="playAlbumSongs(this, '<%= album[1].replace("'", "\\'") %>')">
                                     <i class="fas fa-play"></i>
                                 </button>
                             </div>
@@ -864,8 +864,12 @@
                     <!-- Popular Artists -->
                     <div class="carousel-container" id="popularArtistsCarousel">
                         <h2 class="section-title">Nghệ sĩ phổ biến</h2>
-                        <button class="nav-button nav-left-btn" onclick="moveCarousel('popularArtistsCarousel', -1)"></button>
-                        <button class="nav-button nav-right-btn" onclick="moveCarousel('popularArtistsCarousel', 1)"></button>
+                        <button class="nav-button nav-left-btn" onclick="moveCarousel('popularArtistsCarousel', -1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="nav-button nav-right-btn" onclick="moveCarousel('popularArtistsCarousel', 1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
                         <div class="carousel-items">
                             <%
                                 String[][] artists = {
@@ -881,17 +885,16 @@
                                 };
                                 for (String[] artist : artists) {
                             %>
-                            <div class="card">
+                            <div class="card" data-artist="<%= artist[1] %>">
                                 <a href="<%=request.getContextPath()%>/artistsongs?artist=<%= artist[1] %>">
                                     <img src="<%=request.getContextPath()%>/coverImages/<%= artist[0] %>.jpg"
                                          alt="<%= artist[1] %>" style="border-radius: 50%;">
                                 </a>
                                 <div class="card-title"><%= artist[1]%></div>
                                 <div class="card-subtitle">Nghệ sĩ</div>
-                                <a href="javascript:void(0);" class="play-button"
-                                   onclick="playArtist('<%= artist[1] %>')">
+                                <button class="play-button" onclick="playArtistSongs(this, '<%= artist[1].replace("'", "\\'") %>')">
                                     <i class="fas fa-play"></i>
-                                </a>
+                                </button>
                             </div>
                             <% }%>
                         </div>
@@ -908,7 +911,7 @@
                         </button>
                         <div class="carousel-items">
                             <c:forEach var="s" items="${newSongs}">
-                                <div class="card">
+                                <div class="card" data-url="${pageContext.request.contextPath}/play?file=${fn:replace(s.filePath, ' ', '%20')}" data-title="${fn:escapeXml(s.title)}" data-artist="${fn:escapeXml(s.artist)}">
                                     <a href="${pageContext.request.contextPath}/songDetail?title=${fn:escapeXml(s.title)}">
                                         <img src="${s.coverImage}" alt="${s.title}">
                                     </a>
@@ -916,9 +919,9 @@
                                         <a href="${pageContext.request.contextPath}/songDetail?title=${fn:escapeXml(s.title)}">${s.title}</a>
                                     </div>
                                     <div class="card-subtitle">${s.artist}</div>
-                                    <a href="${pageContext.request.contextPath}/play?file=${fn:replace(s.filePath, ' ', '%20')}" class="play-button">
+                                    <button class="play-button" type="button" onclick="playCardSong(this)">
                                         <i class="fas fa-play"></i>
-                                    </a>
+                                    </button>
                                 </div>
                             </c:forEach>
                         </div>
@@ -926,86 +929,9 @@
                 </div>
             </main>
 
-
-        <!-- Media Player (from player.jsp) -->
-        <div class="media-player-wrapper">
-            <div class="media-player-container">
-                <!-- Media Info -->
-                <div class="media-info">
-                    <img src="https://via.placeholder.com/60x60/333333/ffffff?text=♪"
-                         alt="Media thumbnail" class="media-thumbnail" id="mediaThumbnail">
-                    <div class="media-details">
-                        <h3 id="mediaTitle">Chưa có bài hát</h3>
-                        <p id="mediaArtist">Không rõ nghệ sĩ</p>
-                    </div>
-                </div>
-
-                <!-- Audio -->
-                <audio id="audioPlayer" preload="metadata">
-                    <source src="${not empty mediaInfo.audioUrl ? mediaInfo.audioUrl : ''}" type="audio/mpeg">
-                    Your browser does not support the audio element.
-                </audio>
-
-                <!-- Controls -->
-                <div class="media-controls">
-                    <button class="control-btn" id="shuffleBtn" title="Shuffle">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M17 3L22.25 7.5L17 12V9H13.5L11.83 7.33L13.5 5.67H17V3ZM17 15V12L22.25 16.5L17 21V18H13.5L6.5 11L8.17 9.33L13.5 15H17ZM2 7.5L6.5 12L2 16.5V7.5Z"/></svg>
-                    </button>
-                    <button class="control-btn" id="prevBtn" title="Previous">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M6 6H8V18H6V6ZM9.5 12L18 6V18L9.5 12Z"/></svg>
-                    </button>
-                    <button class="control-btn play-btn" id="playBtn" title="Play/Pause">
-                        <svg class="icon" id="playIcon" viewBox="0 0 24 24"><path d="M8 5V19L19 12L8 5Z"/></svg>
-                        <svg class="icon hidden" id="pauseIcon" viewBox="0 0 24 24"><path d="M6 4H10V20H6V4ZM14 4H18V20H14V4Z"/></svg>
-                    </button>
-                    <button class="control-btn" id="nextBtn" title="Next">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M16 18H18V6H16V18ZM6 6V18L14.5 12L6 6Z"/></svg>
-                    </button>
-                    <button class="control-btn" id="repeatBtn" title="Repeat">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M7 7H17V10L21 6L17 2V5H5V11H7V7ZM17 17H7V14L3 18L7 22V19H19V13H17V17Z"/></svg>
-                    </button>
-                </div>
-
-                <!-- Progress Bar -->
-                <div class="progress-container">
-                    <div class="progress-bar" id="progressBar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="time-display">
-                        <span id="currentTime">0:00</span>
-                        <span id="totalTime">-:--</span>
-                    </div>
-                </div>
-
-                <!-- Bottom Controls -->
-                <div class="bottom-controls">
-                    <button class="control-btn" id="queueBtn" title="Queue">
-                        <i class="fas fa-bars" style="font-size: 24px;"></i>
-                    </button>
-                </div>
-
-                <div class="volume-control">
-                    <button class="control-btn" id="volumeBtn" title="Volume">
-                        <svg class="icon" id="volumeIcon" viewBox="0 0 24 24"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18.01,19.86 21,16.28 21,12C21,7.72 18.01,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z"/></svg>
-                    </button>
-                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
-                </div>
-
-                <!-- Queue Panel -->
-                <div id="queueRightPanel" class="queue-right-panel">
-                    <div class="queue-header">
-                        <span>Danh sách chờ</span>
-                        <button onclick="toggleQueueRight()" style="background:none;border:none;font-size:20px;color:#ff40b0;cursor:pointer;">×</button>
-                    </div>
-                    <div class="queue-content">
-                        <i class="fas fa-bars" style="font-size:28px;color:#ff40b0;margin-bottom:8px;"></i>
-                        <h5 style="color:#ff40b0;">Thêm vào danh sách chờ</h5>
-                        <p style="color:#bbb;font-size:13px;">Nhấn vào "Thêm vào danh sách chờ" từ menu của một bài để đưa vào đây</p>
-                        <button style="background-color:#ff40b0;border:none;padding:8px 16px;border-radius:18px;color:white;cursor:pointer;font-weight:bold;">Tìm nội dung để phát</button>
-                    </div>
-                </div>
-            </div>
         </div>
+
+        <jsp:include page="/WEB-INF/views/layouts/player.jsp" />
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script>
@@ -1122,7 +1048,7 @@
                 panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
             }
 
-            function playSong(audioUrl, title, artist) {
+            function playSong(audioUrl, title, artist, element) {
                 const audio = document.getElementById('audioPlayer');
                 const titleEl = document.getElementById('mediaTitle');
                 const artistEl = document.getElementById('mediaArtist');
@@ -1142,6 +1068,19 @@
                 thumbnailEl.onerror = () => {
                     thumbnailEl.src = '<%= request.getContextPath() %>/songImages/default.jpg';
                 };
+
+                // Highlight bài hát đang phát
+                highlightCurrentSong();
+            }
+
+            function highlightCurrentSong() {
+                const items = document.querySelectorAll('.carousel-items .card[data-url]');
+                const audio = document.getElementById('audioPlayer');
+                items.forEach(item => {
+                    const url1 = new URL(item.getAttribute('data-url'), window.location.origin).href;
+                    const url2 = new URL(audio.src, window.location.origin).href;
+                    item.classList.toggle('active', url1 === url2);
+                });
             }
 
             function toImageFileName(title) {
@@ -1153,6 +1092,20 @@
                     if (word) pascalCase += word[0].toUpperCase() + word.slice(1);
                 }
                 return pascalCase + ".jpg";
+            }
+
+            function playCardSong(btn) {
+                const card = btn.closest('.card');
+                // Lấy tất cả các card trong section (carousel hiện tại)
+                const allCards = Array.from(card.parentNode.children);
+                window.currentSongList = allCards.map(c => ({
+                    filePath: c.getAttribute('data-url')?.split('file=')[1] || '',
+                    title: c.getAttribute('data-title'),
+                    artist: c.getAttribute('data-artist')
+                }));
+                window.currentSongIndex = allCards.indexOf(card);
+                window.playSongFromList(window.currentSongList, window.currentSongIndex);
+                if (typeof setupAutoNext === 'function') setupAutoNext();
             }
 
             document.addEventListener('DOMContentLoaded', function () {
@@ -1239,14 +1192,71 @@
                     }
                 });
 
-                document.getElementById('prevBtn').addEventListener('click', function () {
-                    console.log('Previous track');
-                });
-
-                document.getElementById('nextBtn').addEventListener('click', function () {
-                    console.log('Next track');
-                });
+                if (audio) {
+                    audio.addEventListener('ended', function () {
+                        const allSongs = [...document.querySelectorAll('.carousel-items .card[data-url]')];
+                        const currentIndex = allSongs.findIndex(item => {
+                            const url1 = new URL(item.getAttribute('data-url'), window.location.origin).href;
+                            const url2 = new URL(audio.src, window.location.origin).href;
+                            return url1 === url2;
+                        });
+                        if (currentIndex !== -1 && currentIndex < allSongs.length - 1) {
+                            // Lấy thông tin bài tiếp theo
+                            const nextCard = allSongs[currentIndex + 1];
+                            const nextUrl = nextCard.getAttribute('data-url');
+                            const nextTitle = nextCard.querySelector('.card-title a').textContent;
+                            const nextArtist = nextCard.querySelector('.card-subtitle').textContent;
+                            playSong(nextUrl, nextTitle, nextArtist, nextCard);
+                        }
+                    });
+                }
             });
+
+            // --- API-based play logic for albums and artists ---
+            if (typeof window.currentSongList === 'undefined') window.currentSongList = [];
+            if (typeof window.currentSongIndex === 'undefined') window.currentSongIndex = 0;
+            window.playSongFromList = function(songList, index) {
+                if (!songList || !songList[index]) return;
+                const s = songList[index];
+                const url = '<%= request.getContextPath() %>/play?file=' + encodeURIComponent(s.filePath);
+                playSong(url, s.title, s.artist, null);
+            };
+
+            function playAlbumSongs(btn, albumName) {
+                fetch(window.location.origin + '<%= request.getContextPath() %>/api/hottrend-songs?name=' + encodeURIComponent(albumName))
+                    .then(res => res.json())
+                    .then(songs => {
+                        if (songs && songs.length > 0) {
+                            window.currentSongList = songs;
+                            window.currentSongIndex = 0;
+                            window.playSongFromList(window.currentSongList, window.currentSongIndex);
+                            setupAutoNext();
+                        }
+                    });
+            }
+
+            function playArtistSongs(btn, artistName) {
+                fetch(window.location.origin + '<%= request.getContextPath() %>/api/artist-songs?artist=' + encodeURIComponent(artistName))
+                    .then(res => res.json())
+                    .then(songs => {
+                        if (songs && songs.length > 0) {
+                            window.currentSongList = songs;
+                            window.currentSongIndex = 0;
+                            window.playSongFromList(window.currentSongList, window.currentSongIndex);
+                            setupAutoNext();
+                        }
+                    });
+            }
+
+            function setupAutoNext() {
+                const audio = document.getElementById('audioPlayer');
+                audio.onended = function () {
+                    if (window.currentSongList && window.currentSongIndex < window.currentSongList.length - 1) {
+                        window.currentSongIndex++;
+                        window.playSongFromList(window.currentSongList, window.currentSongIndex);
+                    }
+                };
+            }
         </script>
     </body>
 </html>

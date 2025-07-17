@@ -350,13 +350,20 @@ function createNewPlaylistFromInput() {
     });
             let currentPlayingUrl = "";
             function playFirstSong() {
-                const firstSongPath = '<%= encodedFirstSongPath%>';
-                const title = '<%= songToPlay != null ? songToPlay.getTitle().replace("'", "\\'") : "Không có bài hát"%>';
-                const artist = '<%= songToPlay != null && songToPlay.getArtist() != null ? songToPlay.getArtist().replace("'", "\\'") : "Không rõ nghệ sĩ"%>';
-                const image = '<%= firstSongImage%>';
-                if (firstSongPath) {
-                    currentPlayingUrl = '<%= request.getContextPath()%>/play?file=' + firstSongPath;
-                    playSong(currentPlayingUrl, title, artist, image, document.querySelector('.song-item'));
+                const allItems = Array.from(document.querySelectorAll('.song-item'));
+                if (allItems.length > 0) {
+                    window.currentSongList = allItems.map(it => {
+                        let raw = (it.getAttribute('data-url').split('file=')[1] || '').split('&')[0];
+                        let decoded = decodeURIComponent(raw);
+                        if (decoded.startsWith('songs/')) decoded = decoded.substring(6);
+                        return {
+                            filePath: decoded,
+                            title: it.querySelector('.title')?.textContent || '',
+                            artist: it.querySelector('.left .title')?.textContent || ''
+                        };
+                    });
+                    window.currentSongIndex = 0;
+                    allItems[0].click();
                 }
             }
             function toggleCreatePlaylist() {
@@ -380,7 +387,6 @@ function createNewPlaylistFromInput() {
                 };
 
                 // Highlight bài hát
-                currentPlayingUrl = audioUrl;
                 highlightCurrentSong();
 
                 // Cập nhật ảnh header
@@ -392,18 +398,52 @@ function createNewPlaylistFromInput() {
                 // Gửi yêu cầu lưu lịch sử nghe
                 if (element && element.dataset && element.dataset.songId) {
                     fetch(`${window.location.origin}${contextPath}/listening?songId=${element.dataset.songId}`)
-                                        .catch(err => console.error("Lỗi khi lưu lịch sử:", err));
-                            }
+                        .catch(err => console.error("Lỗi khi lưu lịch sử:", err));
+                }
+            }
+            function highlightCurrentSong() {
+                const items = document.querySelectorAll('.song-item');
+                const audio = document.getElementById('audioPlayer');
+                items.forEach(item => {
+                    const url1 = new URL(item.getAttribute('data-url'), window.location.origin).href;
+                    const url2 = new URL(audio.src, window.location.origin).href;
+                    item.classList.toggle('active', url1 === url2);
+                });
+            }
+            document.addEventListener('DOMContentLoaded', function () {
+                const audio = document.getElementById('audioPlayer');
+                if (audio) {
+                    audio.addEventListener('ended', function () {
+                        const allSongs = [...document.querySelectorAll('.song-item')];
+                        const currentIndex = allSongs.findIndex(item => {
+                            const url1 = new URL(item.getAttribute('data-url'), window.location.origin).href;
+                            const url2 = new URL(audio.src, window.location.origin).href;
+                            return url1 === url2;
+                        });
+                        if (currentIndex !== -1 && currentIndex < allSongs.length - 1) {
+                            allSongs[currentIndex + 1].click();
                         }
-                        function highlightCurrentSong() {
-                            const items = document.querySelectorAll('.song-item');
-                            items.forEach(item => {
-                                const url1 = new URL(item.getAttribute('data-url'), window.location.origin).href;
-                                const url2 = new URL(currentPlayingUrl, window.location.origin).href;
-                                item.classList.toggle('active', url1 === url2);
-                            });
-                        }
-                        
+                    });
+                }
+            });
+
+            // Khi click vào bất kỳ bài nào, cập nhật lại currentSongList và currentSongIndex
+            const allSongItems = Array.from(document.querySelectorAll('.song-item'));
+            allSongItems.forEach((item, idx) => {
+                item.addEventListener('click', function() {
+                    window.currentSongList = allSongItems.map(it => {
+                        let raw = (it.getAttribute('data-url').split('file=')[1] || '').split('&')[0];
+                        let decoded = decodeURIComponent(raw);
+                        if (decoded.startsWith('songs/')) decoded = decoded.substring(6);
+                        return {
+                            filePath: decoded,
+                            title: it.querySelector('.title')?.textContent || '',
+                            artist: it.querySelector('.left .title')?.textContent || ''
+                        };
+                    });
+                    window.currentSongIndex = idx;
+                });
+            });
         </script>
         <jsp:include page="/WEB-INF/views/layouts/player.jsp" />
 <div id="playlistMenu" class="playlist-popup" style="display:none;">

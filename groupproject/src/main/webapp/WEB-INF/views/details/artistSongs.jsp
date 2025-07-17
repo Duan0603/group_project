@@ -201,12 +201,44 @@ String firstSongImage = "https://via.placeholder.com/60x60/333333/ffffff?text=�
 </div>
 
 <script>
-let currentPlayingUrl = ""; // lưu bài đang phát
-
+// Đảm bảo biến và hàm là global
+if (typeof window.currentSongList === 'undefined') window.currentSongList = [];
+if (typeof window.currentSongIndex === 'undefined') window.currentSongIndex = 0;
+// Khi click vào bất kỳ bài nào, cập nhật lại currentSongList và currentSongIndex
+const allSongItems = Array.from(document.querySelectorAll('.song-item'));
+allSongItems.forEach((item, idx) => {
+    item.addEventListener('click', function() {
+        window.currentSongList = allSongItems.map(it => {
+            let raw = (it.getAttribute('data-url').split('file=')[1] || '').split('&')[0];
+            let decoded = decodeURIComponent(raw);
+            if (decoded.startsWith('songs/')) decoded = decoded.substring(6);
+            return {
+                filePath: decoded,
+                title: it.querySelector('.title')?.textContent || '',
+                artist: it.querySelector('.left .title')?.textContent || ''
+            };
+        });
+        window.currentSongIndex = idx;
+    });
+});
+// Khi playFirstSong, cũng cập nhật queue
 function playFirstSong() {
-        const first = document.querySelector('.song-item');
-        if (first) first.click();
+    const allItems = Array.from(document.querySelectorAll('.song-item'));
+    if (allItems.length > 0) {
+        window.currentSongList = allItems.map(it => {
+            let raw = (it.getAttribute('data-url').split('file=')[1] || '').split('&')[0];
+            let decoded = decodeURIComponent(raw);
+            if (decoded.startsWith('songs/')) decoded = decoded.substring(6);
+            return {
+                filePath: decoded,
+                title: it.querySelector('.title')?.textContent || '',
+                artist: it.querySelector('.left .title')?.textContent || ''
+            };
+        });
+        window.currentSongIndex = 0;
+        allItems[0].click();
     }
+}
 
 function addToPlaylist(songId, event) {
     // Ngăn không cho sự kiện nhấn vào dấu cộng cũng kích hoạt playSong
@@ -273,16 +305,16 @@ function playSong(audioUrl, title, artist, imageUrl, element) {
         fetch(`${window.location.origin}${contextPath}/listening?songId=${element.dataset.songId}`)
             .catch(err => console.error("Lỗi khi lưu lịch sử:", err));
     }
-
     // Highlight bài hát
     highlightCurrentSong();
 }
+
 function highlightCurrentSong() {
     const items = document.querySelectorAll('.song-item');
 
     items.forEach(item => {
         const url1 = new URL(item.getAttribute('data-url'), window.location.origin).href;
-        const url2 = new URL(currentPlayingUrl, window.location.origin).href;
+        const url2 = new URL(audio.src, window.location.origin).href;
 
         if (url1 === url2) {
             item.classList.add('active');
@@ -291,18 +323,21 @@ function highlightCurrentSong() {
         }
     });
 }
-window.addEventListener('DOMContentLoaded', () => {
+
+document.addEventListener('DOMContentLoaded', function () {
     const audio = document.getElementById('audioPlayer');
     if (audio) {
-        audio.addEventListener('play', highlightCurrentSong);
-    }
-});
-audio.addEventListener('ended', () => {
-    const allSongs = [...document.querySelectorAll('.song-item')];
-    const currentIndex = allSongs.findIndex(item => item.getAttribute('data-url') === currentPlayingUrl);
-
-    if (currentIndex !== -1 && currentIndex < allSongs.length - 1) {
-        allSongs[currentIndex + 1].click();
+        audio.addEventListener('ended', function () {
+            const allSongs = [...document.querySelectorAll('.song-item')];
+            const currentIndex = allSongs.findIndex(item => {
+                const url1 = new URL(item.getAttribute('data-url'), window.location.origin).href;
+                const url2 = new URL(audio.src, window.location.origin).href;
+                return url1 === url2;
+            });
+            if (currentIndex !== -1 && currentIndex < allSongs.length - 1) {
+                allSongs[currentIndex + 1].click();
+            }
+        });
     }
 });
 </script>

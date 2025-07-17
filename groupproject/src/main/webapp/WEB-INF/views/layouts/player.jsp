@@ -244,6 +244,16 @@
                 box-shadow: -5px 0 15px #e84393;
                 overflow-y: auto;
             }
+
+            #repeatBtn.active, #repeatBtn.active .icon {
+                color: #e84393 !important;
+                fill: #e84393 !important;
+            }
+            #repeatBtn .icon {
+                color: #fff;
+                fill: #fff;
+                transition: color 0.2s, fill 0.2s;
+            }
         </style>
 
         <!-- Media Info -->
@@ -264,9 +274,6 @@
 
         <!-- Controls -->
         <div class="media-controls">
-            <button class="control-btn" id="shuffleBtn" title="Shuffle">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M17 3L22.25 7.5L17 12V9H13.5L11.83 7.33L13.5 5.67H17V3ZM17 15V12L22.25 16.5L17 21V18H13.5L6.5 11L8.17 9.33L13.5 15H17ZM2 7.5L6.5 12L2 16.5V7.5Z"/></svg>
-            </button>
             <button class="control-btn" id="prevBtn" title="Previous">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M6 6H8V18H6V6ZM9.5 12L18 6V18L9.5 12Z"/></svg>
             </button>
@@ -278,7 +285,7 @@
                 <svg class="icon" viewBox="0 0 24 24"><path d="M16 18H18V6H16V18ZM6 6V18L14.5 12L6 6Z"/></svg>
             </button>
             <button class="control-btn" id="repeatBtn" title="Repeat">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M7 7H17V10L21 6L17 2V5H5V11H7V7ZM17 17H7V14L3 18L7 22V19H19V13H17V17Z"/></svg>
+                <svg class="icon" id="repeatIcon" viewBox="0 0 24 24"><path d="M7 7H17V10L21 6L17 2V5H5V11H7V7ZM17 17H7V14L3 18L7 22V19H19V13H17V17Z"/></svg>
             </button>
         </div>
 
@@ -294,11 +301,12 @@
         </div>
 
         <!-- Bottom Controls -->
-        <div class="bottom-controls">
+        <!-- Đã di chuyển nút queue sang bên trái nút volume -->
+        <!-- <div class="bottom-controls">
             <button class="control-btn" id="queueBtn" title="Queue">
                 <i class="fas fa-bars" style="font-size: 24px;"></i>
             </button>
-        </div>
+        </div> -->
 
         <div id="queueRightPanel" class="queue-right-panel">
             <div class="queue-header" style="display:flex;justify-content:space-between;align-items:center;">
@@ -314,6 +322,9 @@
         </div>
     </div>
     <div class="volume">
+        <button class="control-btn" id="queueBtn" title="Queue" style="margin-right: 8px;">
+            <i class="fas fa-bars" id="queue-icon"></i>
+        </button>
         <button class="control-btn" id="volumeBtn" title="Toggle Volume" style="margin-right: 8px;">
             <i class="fas fa-volume-up" id="volume-icon"></i>
         </button>
@@ -377,6 +388,8 @@
         const volumeSlider = document.getElementById('volumeSlider');
         const volumeBtn = document.getElementById('volumeBtn');
         const volumeIcon = document.getElementById('volume-icon');
+        const repeatBtn = document.getElementById('repeatBtn');
+        let isRepeat = false;
 
         audio.volume = 0.5;
         let isPlaying = false;
@@ -455,12 +468,50 @@
         });
 
         document.getElementById('prevBtn').addEventListener('click', function () {
-            console.log('Previous track');
+            if (window.currentSongList && window.currentSongIndex > 0) {
+                window.currentSongIndex--;
+                window.playSongFromList(window.currentSongList, window.currentSongIndex);
+            }
         });
 
         document.getElementById('nextBtn').addEventListener('click', function () {
-            console.log('Next track');
+            if (window.currentSongList && window.currentSongIndex < window.currentSongList.length - 1) {
+                window.currentSongIndex++;
+                window.playSongFromList(window.currentSongList, window.currentSongIndex);
+            }
+        });
+
+        repeatBtn.addEventListener('click', function () {
+            isRepeat = !isRepeat;
+            repeatBtn.classList.toggle('active', isRepeat);
+        });
+
+        audio.addEventListener('ended', function () {
+            if (isRepeat) {
+                audio.currentTime = 0;
+                audio.play();
+            } else if (window.currentSongList && window.currentSongIndex < window.currentSongList.length - 1) {
+                window.currentSongIndex++;
+                window.playSongFromList(window.currentSongList, window.currentSongIndex);
+            }
         });
     });
+
+    // Đảm bảo biến và hàm là global
+    if (typeof window.currentSongList === 'undefined') window.currentSongList = [];
+    if (typeof window.currentSongIndex === 'undefined') window.currentSongIndex = 0;
+    window.playSongFromList = function(songList, index) {
+        if (!songList || !songList[index]) return;
+        // Nếu có .song-item trên trang, trigger click để đồng bộ mọi thứ
+        const allItems = Array.from(document.querySelectorAll('.song-item'));
+        if (allItems.length > 0 && allItems[index]) {
+            allItems[index].click();
+            return;
+        }
+        // Nếu không có .song-item (ví dụ ở trang home), fallback về phát nhạc trực tiếp
+        const s = songList[index];
+        const url = '<%= request.getContextPath() %>/play?file=' + encodeURIComponent(s.filePath);
+        playSong(url, s.title, s.artist, null);
+    };
 </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
