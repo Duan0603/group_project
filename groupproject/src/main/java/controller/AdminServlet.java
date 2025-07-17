@@ -1,5 +1,6 @@
 package controller;
 
+import dao.OrderDAO;
 import dao.SongDAO;
 import dao.UserDAO;
 import jakarta.servlet.ServletException;
@@ -9,7 +10,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
-import java.util.List;
 import model.User;
 
 @WebServlet(name = "AdminServlet", urlPatterns = {"/admin"})
@@ -17,11 +17,14 @@ public class AdminServlet extends HttpServlet {
 
     private UserDAO userDAO;
     private SongDAO songDAO;
+    private OrderDAO orderDAO; // Thêm OrderDAO
 
     @Override
     public void init() throws ServletException {
+        // Khởi tạo tất cả các DAO cần thiết một lần duy nhất
         userDAO = new UserDAO();
         songDAO = new SongDAO();
+        orderDAO = new OrderDAO();
     }
 
     @Override
@@ -31,26 +34,29 @@ public class AdminServlet extends HttpServlet {
         HttpSession session = request.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
-        // --- KIỂM TRA QUYỀN TRUY CẬP ---
+        // Kiểm tra quyền truy cập, chỉ cho phép ADMIN vào trang này
         if (user == null || !"ADMIN".equalsIgnoreCase(user.getRole())) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
-        // --- LẤY DỮ LIỆU CHO DASHBOARD ---
+        // Lấy dữ liệu cho các thẻ thống kê trên Dashboard
         request.setAttribute("totalUsers", userDAO.countTotalUsers());
         request.setAttribute("totalSongs", songDAO.countTotalSongs());
+        request.setAttribute("totalOrders", orderDAO.countTotalOrders());
+        request.setAttribute("totalRevenue", orderDAO.calculateTotalRevenue());
         
-        // Giả lập dữ liệu cho đơn hàng và doanh thu vì chưa có DAO
-        request.setAttribute("totalOrders", 0);
-        request.setAttribute("totalRevenue", 0.0);
+        
+        // LẤY DỮ LIỆU CHO BIỂU ĐỒ
+        String monthlyRevenueData = orderDAO.getMonthlyRevenueForChart();
+        request.setAttribute("monthlyRevenueData", monthlyRevenueData);
 
-        // --- LẤY DỮ LIỆU CHO CÁC TAB ---
+        // Lấy danh sách chi tiết cho các bảng quản lý
         request.setAttribute("userList", userDAO.getAllUsers());
         request.setAttribute("songList", songDAO.getAllActiveSongs());
+        request.setAttribute("orderList", orderDAO.getAllOrders());
 
-        // --- Chuyển hướng đến trang JSP ---
-        // Đã cập nhật đường dẫn theo yêu cầu của bạn
+        // Chuyển tiếp tất cả dữ liệu đến trang JSP để hiển thị
         request.getRequestDispatcher("/WEB-INF/views/admin.jsp").forward(request, response);
     }
 }
