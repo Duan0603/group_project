@@ -29,6 +29,8 @@
         .table thead th { color: #ff69b4; border-bottom: 2px solid #ff69b4; }
         .badge.bg-success { background-color: #28a745 !important; color: white; }
         .badge.bg-danger { background-color: #dc3545 !important; color: white; }
+        .badge.bg-info { background-color: #8A2BE2 !important; color: white; }
+        .badge.bg-secondary { background-color: #6c757d !important; color: white; }
         .btn-primary { background-color: #ff69b4; border-color: #ff69b4; color: #1a1a1a; font-weight: bold; }
         .btn-primary:hover { background-color: #ff1493; border-color: #ff1493; color: #1a1a1a; }
         .btn-danger { font-weight: bold; }
@@ -163,7 +165,7 @@
                                         <th>Tên người dùng</th>
                                         <th>Email</th>
                                         <th>Vai trò</th>
-                                        <th>Provider</th>
+                                        <th>Premium</th>
                                         <th>Trạng thái</th>
                                         <th>Thao tác</th>
                                     </tr>
@@ -175,7 +177,10 @@
                                             <td><c:out value="${u.username}"/></td>
                                             <td><c:out value="${u.email}"/></td>
                                             <td><c:out value="${u.role}"/></td>
-                                            <td><c:out value="${u.provider}"/></td>
+                                            <td>
+                                                <c:if test="${u.premium}"><span class="badge bg-info">Premium</span></c:if>
+                                                <c:if test="${not u.premium}"><span class="badge bg-secondary">Thường</span></c:if>
+                                            </td>
                                             <td>
                                                 <c:if test="${u.status}"><span class="badge bg-success">Hoạt động</span></c:if>
                                                 <c:if test="${not u.status}"><span class="badge bg-danger">Bị khóa</span></c:if>
@@ -199,8 +204,18 @@
                                                             <c:otherwise><button type="submit" class="btn btn-sm btn-success">Mở</button></c:otherwise>
                                                         </c:choose>
                                                     </form>
+                                                    
+                                                    <form action="${pageContext.request.contextPath}/admin/users" method="post" style="display:inline;">
+                                                        <input type="hidden" name="action" value="togglePremium">
+                                                        <input type="hidden" name="userId" value="${u.userId}">
+                                                        <input type="hidden" name="currentPremiumStatus" value="${u.premium}">
+                                                        <c:choose>
+                                                            <c:when test="${u.premium}"><button type="submit" class="btn btn-sm btn-secondary">Hủy Premium</button></c:when>
+                                                            <c:otherwise><button type="submit" class="btn btn-sm btn-primary">Nâng cấp</button></c:otherwise>
+                                                        </c:choose>
+                                                    </form>
 
-                                                    <form action="${pageContext.request.contextPath}/admin/users" method="post" style="display:inline;" onsubmit="return confirm('CẢNH BÁO: Bạn có chắc chắn muốn XÓA VĨNH VIỄN tài khoản này? Mọi dữ liệu liên quan (playlist, lịch sử nghe,...) sẽ bị mất và không thể khôi phục.');">
+                                                    <form action="${pageContext.request.contextPath}/admin/users" method="post" style="display:inline;" onsubmit="return confirm('CẢNH BÁO: Xóa vĩnh viễn tài khoản này? Mọi dữ liệu liên quan sẽ bị mất và không thể khôi phục.');">
                                                         <input type="hidden" name="action" value="delete">
                                                         <input type="hidden" name="userId" value="${u.userId}">
                                                         <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
@@ -216,8 +231,36 @@
 
                     <div class="tab-pane fade" id="orders">
                         <h2>Quản lý đơn hàng</h2>
-                         <div class="mt-4">
-                            <p>Chức năng đang được phát triển.</p>
+                        <div class="mt-4">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID Đơn hàng</th>
+                                        <th>Tên người dùng</th>
+                                        <th>Ngày đặt</th>
+                                        <th>Mô tả</th>
+                                        <th class="text-end">Số tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <c:forEach var="order" items="${orderList}">
+                                        <tr>
+                                            <td>${order.orderId}</td>
+                                            <td><c:out value="${order.username}"/></td>
+                                            <td><fmt:formatDate value="${order.orderDate}" pattern="HH:mm:ss dd-MM-yyyy" /></td>
+                                            <td><c:out value="${order.description}"/></td>
+                                            <td class="text-end">
+                                                <fmt:formatNumber value="${order.amount}" type="currency" currencySymbol="" maxFractionDigits="0" />đ
+                                            </td>
+                                        </tr>
+                                    </c:forEach>
+                                    <c:if test="${empty orderList}">
+                                        <tr>
+                                            <td colspan="5" class="text-center">Chưa có đơn hàng nào.</td>
+                                        </tr>
+                                    </c:if>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -323,7 +366,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // SỬA LỖI Ở ĐÂY: Thêm code để tự động mở tab dựa trên URL
             var hash = window.location.hash;
             if (hash) {
                 var triggerEl = document.querySelector('.nav-pills a[href="' + hash + '"]');
@@ -354,14 +396,17 @@
                 roleSelect.value = role;
             });
 
+            const chartDataJSON = '${monthlyRevenueData}';
+            const chartData = JSON.parse(chartDataJSON);
+            
             const revenueCtx = document.getElementById('revenueChart').getContext('2d');
             new Chart(revenueCtx, {
                 type: 'line',
                 data: {
-                    labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'],
+                    labels: chartData.labels,
                     datasets: [{
                         label: 'Doanh thu (VND)',
-                        data: [0, 0, 0, 0, 0, 0],
+                        data: chartData.data,
                         borderColor: '#ff69b4',
                         backgroundColor: 'rgba(255, 105, 180, 0.2)',
                         fill: true,
