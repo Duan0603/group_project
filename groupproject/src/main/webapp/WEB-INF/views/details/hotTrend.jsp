@@ -1,11 +1,11 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<<%@ page language="java" contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ page import="model.Songs" %>
 <%@ page import="java.util.*" %>
 <%@ page import="dao.SongDAO" %>
 <%@ page import="java.net.URLEncoder" %>
 
-<jsp:include page="/WEB-INF/views/layouts/header.jsp" />
 
 <%
     List<Songs> songs = (List<Songs>) request.getAttribute("songs");
@@ -197,10 +197,12 @@
         </style>
     </head>
     <body>
+        <jsp:include page="/WEB-INF/views/layouts/header.jsp" />
+
         <div class="main-area">
-            <div class="sidebar-area">
-                <jsp:include page="/WEB-INF/views/layouts/sidebar.jsp" />
-            </div>
+
+            <jsp:include page="/WEB-INF/views/layouts/sidebar.jsp" />
+        
             <div class="content-area">
                 <div class="artist-header">
                     <div class="verified"><span>Danh sách phát công khai</span></div>

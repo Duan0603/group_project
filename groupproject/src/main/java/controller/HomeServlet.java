@@ -2,6 +2,7 @@ package controller;
 
 import dao.FavoriteDAO;
 import dao.ListeningHistoryDAO;
+import dao.PlaylistDAO;
 import dao.SongDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -57,9 +58,11 @@ public class HomeServlet extends HttpServlet {
                 // Cập nhật favoriteSongIds
                 Set<Integer> favoriteSongIds = favoriteDAO.getFavoriteSongIdsByUser(user.getUserId());
                 session.setAttribute("favoriteSongIds", favoriteSongIds);
-                
                 ListeningHistoryDAO historyDAO = new ListeningHistoryDAO();
-    request.setAttribute("listeningHistory", historyDAO.getHistoryByUser(user.getUserId()));
+                request.setAttribute("listeningHistory", historyDAO.getHistoryByUser(user.getUserId()));
+                // Bổ sung truyền danh sách playlist của user cho sidebar
+                PlaylistDAO playlistDAO = new PlaylistDAO();
+                request.setAttribute("userPlaylists", playlistDAO.getPlaylistsByUser(user.getUserId()));
             }
 
             request.getRequestDispatcher("/WEB-INF/views/home.jsp").forward(request, response);

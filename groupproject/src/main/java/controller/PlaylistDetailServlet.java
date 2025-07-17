@@ -24,8 +24,7 @@ public class PlaylistDetailServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Lấy tên playlist từ URL
-        String playlistName = request.getParameter("name");
+        String playlistIdStr = request.getParameter("playlistId");
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
 
@@ -35,26 +34,32 @@ public class PlaylistDetailServlet extends HttpServlet {
             return;
         }
 
-        // Kiểm tra nếu tên playlist không rỗng và tồn tại
-        if (playlistName != null && !playlistName.isEmpty()) {
-            // Lấy playlist theo tên
-            Playlist playlist = playlistDAO.getPlaylistByName(playlistName, user.getUserId());
-
-            if (playlist != null) {
-                // Lấy danh sách bài hát trong playlist
-                List<Songs> songs = songDAO.getSongsByPlaylistId(playlist.getPlaylistID());
-                
-                // Truyền thông tin playlist và các bài hát vào request
-                request.setAttribute("playlist", playlist);
-                request.setAttribute("songs", songs);
-                
-                // Forward đến trang playlistDetail.jsp
-                request.getRequestDispatcher("/WEB-INF/views/playlistDetail.jsp").forward(request, response);
-            } else {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Playlist không tồn tại.");
-            }
-        } else {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Tên playlist không hợp lệ.");
+        // Kiểm tra nếu id playlist hợp lệ
+        int playlistId = -1;
+        try {
+            playlistId = Integer.parseInt(playlistIdStr);
+        } catch (Exception e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID playlist không hợp lệ.");
+            return;
         }
+        if (playlistId <= 0) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID playlist không hợp lệ.");
+            return;
+        }
+
+        Playlist playlist = playlistDAO.getPlaylistById(playlistId);
+        if (playlist == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Playlist không tồn tại.");
+            return;
+        }
+
+        List<Songs> songs = songDAO.getSongsByPlaylistId(playlistId);
+        // Truyền thêm danh sách playlist cho sidebar
+        request.setAttribute("userPlaylists", playlistDAO.getPlaylistsByUser(user.getUserId()));
+        request.setAttribute("playlist", playlist);
+        request.setAttribute("songsInPlaylist", songs);
+        // Nếu cần truyền allSongs cho modal thêm bài hát:
+        request.setAttribute("allSongs", songDAO.getAllActiveSongs());
+        request.getRequestDispatcher("/WEB-INF/views/details/playlistDetail.jsp").forward(request, response);
     }
 }

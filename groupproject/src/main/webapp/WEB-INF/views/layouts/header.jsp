@@ -116,7 +116,7 @@
         cursor: pointer;
         position: relative;
     }
-    
+
     .user-avatar.premium {
         border: 3px solid #a259ff;
         box-shadow: 0 0 0 4px #e0c3fc;
@@ -132,14 +132,14 @@
     }
 
     .dropdown-item.logout-item {
-    color: white !important;
-    font-weight: 500;
-}
+        color: white !important;
+        font-weight: 500;
+    }
 
-.dropdown-item.logout-item:hover {
-    background-color: #e84393;
-    color: white !important;
-}
+    .dropdown-item.logout-item:hover {
+        background-color: #e84393;
+        color: white !important;
+    }
 </style>
 
 <nav class="navbar navbar-expand-lg px-3">

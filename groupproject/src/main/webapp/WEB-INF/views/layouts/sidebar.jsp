@@ -281,18 +281,11 @@
             <!-- Danh sách playlist -->
             <div class="library-section" id="userPlaylistsSidebar">
                 <h4 style="margin-left: 16px;">🎵 Playlist của bạn</h4>
-<c:forEach var="pl" items="${userPlaylists}">
-    <c:if test="${pl.playlistID != null}">
-        <div class="library-item" data-playlist-id="${pl.playlistID}"
-             onclick="window.location.href = '${pageContext.request.contextPath}/playlistDetail?name=${pl.name}'">
-            <img src="https://via.placeholder.com/48x48/333333/ffffff?text=♪" alt="cover"/>
-            <div class="library-item-info">
-                <div class="library-item-title">${pl.name}</div>
-                <div class="library-item-subtitle">${pl.description}</div>
-            </div>
-        </div>
-    </c:if>
-</c:forEach>
+                <c:forEach var="playlist" items="${userPlaylists}">
+                    <a href="playlistDetail?playlistId=${playlist.playlistID}">
+                        ${playlist.name}
+                    </a>
+                </c:forEach>
             </div>
         </aside>
 
@@ -355,7 +348,7 @@
                         div.className = "library-item";
 div.setAttribute("data-playlist-id", pl.playlistID);
 div.onclick = () => {
-     window.location.href = `${contextPath}/playlistDetail?name=${pl.playlistName}`;
+     window.location.href = `${contextPath}/playlist?action=viewPlaylistDetail&playlistId=${pl.playlistID}`;
 };
                                                     div.innerHTML = `
     <img src="https://via.placeholder.com/48x48/333333/ffffff?text=♪" alt="cover"/>
@@ -391,12 +384,6 @@ div.onclick = () => {
                                     section.classList.remove("view-list", "view-grid");
                                     section.classList.add(`view-${mode}`);
                                 }
-
-                                // Tải danh sách playlist khi trang được tải
-                                document.addEventListener("DOMContentLoaded", refreshPlaylistList);
-
-                                // Định nghĩa hàm refreshPlaylistList để có thể gọi từ các trang khác
-                                window.refreshPlaylistList = refreshPlaylistList;
         </script>
     </body>
 </html>

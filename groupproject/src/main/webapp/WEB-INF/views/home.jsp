@@ -731,66 +731,8 @@
 
         <!-- Main Container -->
         <div class="main-container">
-            <!-- Left Sidebar (from sidebar.jsp) -->
-            <aside class="left-sidebar" id="sidebar">
-                <div class="sidebar-header">
-                    <div class="left">
-                        <button onclick="toggleSidebar()" title="Thu gọn Thư viện">
-                            <i class="fas fa-angle-double-left"></i>
-                        </button>
-                        <span>Thư viện</span>
-                    </div>
-                    <div class="right">
-                        <button class="create-button" onclick="openCreatePlaylistModal()">
-                            <i class="fas fa-plus"></i> Tạo
-                        </button>
-                        <button class="expand-button" title="Phóng to giao diện">
-                            <i class="fas fa-expand"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="toolbar">
-                    <input type="text" placeholder="Tìm kiếm..." />
-                    <div class="sort-dropdown">
-                        <button onclick="toggleSortOptions()">Sắp xếp theo</button>
-                        <div class="sort-options" id="sortOptions">
-                            <button class="active">Gần đây ✓</button>
-                            <button>Mới thêm gần đây</button>
-                            <button>Thứ tự chữ cái</button>
-                            <button>Người sáng tạo</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="view-modes">
-                    <button class="active" onclick="setViewMode('list')">Danh sách</button>
-                    <button onclick="setViewMode('grid')">Lưới</button>
-                </div>
-
-                <!-- Listening History Section -->
-                <c:if test="${not empty listeningHistory}">
-                    <div class="library-section" id="librarySection">
-                        <h4 style="margin-left: 16px;">🕘 Đã nghe gần đây</h4>
-                        <c:forEach var="his" items="${listeningHistory}">
-                            <div class="library-item"
-                                 onclick="playSong(
-                                     '${pageContext.request.contextPath}/play?file=${his.song.filePath}',
-                                     '${his.song.title}',
-                                     '${his.song.artist}',
-                                     '${pageContext.request.contextPath}/songImages/${his.song.title}.jpg',
-                                     this)">
-                                <img src="${pageContext.request.contextPath}/songImages/${his.song.title}.jpg"
-                                     onerror="this.src='https://via.placeholder.com/48x48/333333/ffffff?text=♪'" alt="cover"/>
-                                <div class="library-item-info">
-                                    <div class="library-item-title">${his.song.title}</div>
-                                    <div class="library-item-subtitle">${his.song.artist}</div>
-                                </div>
-                            </div>
-                        </c:forEach>
-                    </div>
-                </c:if>
-            </aside>
+            <!-- Left Sidebar (include sidebar.jsp) -->
+            <jsp:include page="/WEB-INF/views/layouts/sidebar.jsp" />
 
             <!-- Main Content -->
             <main class="main-content">
@@ -927,84 +869,8 @@
             </main>
 
 
-        <!-- Media Player (from player.jsp) -->
-        <div class="media-player-wrapper">
-            <div class="media-player-container">
-                <!-- Media Info -->
-                <div class="media-info">
-                    <img src="https://via.placeholder.com/60x60/333333/ffffff?text=♪"
-                         alt="Media thumbnail" class="media-thumbnail" id="mediaThumbnail">
-                    <div class="media-details">
-                        <h3 id="mediaTitle">Chưa có bài hát</h3>
-                        <p id="mediaArtist">Không rõ nghệ sĩ</p>
-                    </div>
-                </div>
+            <jsp:include page="/WEB-INF/views/layouts/player.jsp" />
 
-                <!-- Audio -->
-                <audio id="audioPlayer" preload="metadata">
-                    <source src="${not empty mediaInfo.audioUrl ? mediaInfo.audioUrl : ''}" type="audio/mpeg">
-                    Your browser does not support the audio element.
-                </audio>
-
-                <!-- Controls -->
-                <div class="media-controls">
-                    <button class="control-btn" id="shuffleBtn" title="Shuffle">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M17 3L22.25 7.5L17 12V9H13.5L11.83 7.33L13.5 5.67H17V3ZM17 15V12L22.25 16.5L17 21V18H13.5L6.5 11L8.17 9.33L13.5 15H17ZM2 7.5L6.5 12L2 16.5V7.5Z"/></svg>
-                    </button>
-                    <button class="control-btn" id="prevBtn" title="Previous">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M6 6H8V18H6V6ZM9.5 12L18 6V18L9.5 12Z"/></svg>
-                    </button>
-                    <button class="control-btn play-btn" id="playBtn" title="Play/Pause">
-                        <svg class="icon" id="playIcon" viewBox="0 0 24 24"><path d="M8 5V19L19 12L8 5Z"/></svg>
-                        <svg class="icon hidden" id="pauseIcon" viewBox="0 0 24 24"><path d="M6 4H10V20H6V4ZM14 4H18V20H14V4Z"/></svg>
-                    </button>
-                    <button class="control-btn" id="nextBtn" title="Next">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M16 18H18V6H16V18ZM6 6V18L14.5 12L6 6Z"/></svg>
-                    </button>
-                    <button class="control-btn" id="repeatBtn" title="Repeat">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M7 7H17V10L21 6L17 2V5H5V11H7V7ZM17 17H7V14L3 18L7 22V19H19V13H17V17Z"/></svg>
-                    </button>
-                </div>
-
-                <!-- Progress Bar -->
-                <div class="progress-container">
-                    <div class="progress-bar" id="progressBar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="time-display">
-                        <span id="currentTime">0:00</span>
-                        <span id="totalTime">-:--</span>
-                    </div>
-                </div>
-
-                <!-- Bottom Controls -->
-                <div class="bottom-controls">
-                    <button class="control-btn" id="queueBtn" title="Queue">
-                        <i class="fas fa-bars" style="font-size: 24px;"></i>
-                    </button>
-                </div>
-
-                <div class="volume-control">
-                    <button class="control-btn" id="volumeBtn" title="Volume">
-                        <svg class="icon" id="volumeIcon" viewBox="0 0 24 24"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18.01,19.86 21,16.28 21,12C21,7.72 18.01,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z"/></svg>
-                    </button>
-                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
-                </div>
-
-                <!-- Queue Panel -->
-                <div id="queueRightPanel" class="queue-right-panel">
-                    <div class="queue-header">
-                        <span>Danh sách chờ</span>
-                        <button onclick="toggleQueueRight()" style="background:none;border:none;font-size:20px;color:#ff40b0;cursor:pointer;">×</button>
-                    </div>
-                    <div class="queue-content">
-                        <i class="fas fa-bars" style="font-size:28px;color:#ff40b0;margin-bottom:8px;"></i>
-                        <h5 style="color:#ff40b0;">Thêm vào danh sách chờ</h5>
-                        <p style="color:#bbb;font-size:13px;">Nhấn vào "Thêm vào danh sách chờ" từ menu của một bài để đưa vào đây</p>
-                        <button style="background-color:#ff40b0;border:none;padding:8px 16px;border-radius:18px;color:white;cursor:pointer;font-weight:bold;">Tìm nội dung để phát</button>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
