@@ -22,14 +22,13 @@ public class GoogleAuthServlet extends HttpServlet {
 
     private static final String CLIENT_ID = "434084397596-ke38cl1ediqsmlunleio6srv1ape03kr.apps.googleusercontent.com";
     private static final String CLIENT_SECRET = "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";
-    private static final String SCOPE = "email profile openid";
+    private static final String SCOPE = "email profile";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         String code = request.getParameter("code");
-        System.out.println("👉 [GoogleAuthServlet] code = " + code);
 
         if (code == null) {
             String redirectUri = buildRedirectUri(request);
@@ -63,7 +62,6 @@ public class GoogleAuthServlet extends HttpServlet {
                 }
 
                 int responseCode = conn.getResponseCode();
-                System.out.println("👉 Token exchange response code: " + responseCode);
                 if (responseCode != 200) {
                     throw new IOException("Failed to get token: HTTP error code " + responseCode);
                 }
@@ -79,7 +77,6 @@ public class GoogleAuthServlet extends HttpServlet {
 
                 JsonObject jsonResponse = JsonParser.parseString(responseBuilder.toString()).getAsJsonObject();
                 String accessToken = jsonResponse.get("access_token").getAsString();
-                System.out.println(" Access token = " + accessToken);
 
                 // Lấy user info
                 String userInfoUrl = "https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + accessToken;
@@ -88,7 +85,6 @@ public class GoogleAuthServlet extends HttpServlet {
                 userInfoConn.setRequestMethod("GET");
 
                 int userInfoResponseCode = userInfoConn.getResponseCode();
-                System.out.println("👉 User info response code: " + userInfoResponseCode);
                 if (userInfoResponseCode != 200) {
                     throw new IOException("Failed to get user info: HTTP error code " + userInfoResponseCode);
                 }
@@ -105,9 +101,9 @@ public class GoogleAuthServlet extends HttpServlet {
                 JsonObject userInfo = JsonParser.parseString(userInfoResponseBuilder.toString()).getAsJsonObject();
                 String email = userInfo.has("email") ? userInfo.get("email").getAsString() : null;
                 String sub = userInfo.has("sub") ? userInfo.get("sub").getAsString() : null;
-                String name = userInfo.has("name") ? userInfo.get("name").getAsString() : "Người dùng Google";
-
-                System.out.println("👉 Email: " + email + ", Name: " + name + ", Sub: " + sub);
+                String name = userInfo.has("name")
+                        ? userInfo.get("name").getAsString()
+                        : (email != null ? email.substring(0, email.indexOf('@')) : "Google User");
 
                 if (email == null) {
                     response.sendRedirect(request.getContextPath() + "/login?error=email_not_found");
@@ -116,19 +112,21 @@ public class GoogleAuthServlet extends HttpServlet {
 
                 UserDAO userDAO = new UserDAO();
                 User user = userDAO.findByEmail(email);
-                System.out.println("User found? " + (user != null));
 
-                if (user != null) {
-                    // Nếu đã có user, cập nhật lại provider nếu cần
-                    if (!"google".equalsIgnoreCase(user.getProvider())) {
-                        userDAO.updateProvider(email, "google");
-                        user.setProvider("google");
-                        System.out.println(" Provider updated to google");
-                    }
-                } else {
-                    // Nếu chưa có thì tạo mới user Google
+                // Kiểm tra nếu email đã được dùng bởi provider khác
+                if (user != null && !"google".equals(user.getProvider())) {
+                    request.setAttribute("error", "Email này chưa được đăng ký. Vui lòng đăng ký trước khi đăng nhập bằng Google.");
+                    request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);
+                    return;
+                }
+
+                // Nếu user chưa tồn tại thì tạo mới tài khoản Google
+                if (user == null) {
                     user = new User();
-                    user.setUsername(name.trim().replaceAll("\\s+", " "));
+                    user.setUsername(
+                            name.trim()
+                                    .replaceAll("\\s+", " ")
+                    );
                     user.setPassword("");
                     user.setEmail(email);
                     user.setRole("USER");
@@ -137,7 +135,6 @@ public class GoogleAuthServlet extends HttpServlet {
                     user.setGoogleID(sub);
 
                     boolean registered = userDAO.register(user);
-                    System.out.println("� New user registered? " + registered);
                     if (!registered) {
                         response.sendRedirect(request.getContextPath() + "/login?error=registration_failed");
                         return;
@@ -146,28 +143,16 @@ public class GoogleAuthServlet extends HttpServlet {
                     user = userDAO.findByEmail(email);
                 }
 
-                // Gửi OTP
-                try {
-                    String otp = OtpManager.generate(email);
-                    MailUtil.sendOtp(email, user.getUsername(), otp);
-                    System.out.println(" OTP sent to " + email);
-                } catch (Exception ex) {
-                    System.out.println(" Failed to send OTP: " + ex.getMessage());
-                    ex.printStackTrace();
-                    response.sendRedirect(request.getContextPath() + "/login?error=otp_failed");
-                    return;
-                }
+                String otp = OtpManager.generate(email);
+                MailUtil.sendOtp(email, user.getUsername(), otp);
 
-                // Set session và chuyển trang
                 HttpSession session = request.getSession();
                 session.setAttribute("pendingUser", user);
                 session.setAttribute("pendingEmail", email);
 
-                System.out.println("✅ Redirecting to /verify-otp");
                 response.sendRedirect(request.getContextPath() + "/verify-otp");
 
             } catch (Exception e) {
-                System.out.println(" Exception in GoogleAuthServlet: " + e.getMessage());
                 e.printStackTrace();
                 response.sendRedirect(request.getContextPath() + "/login?error=google_login_failed");
             }

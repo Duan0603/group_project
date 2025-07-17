@@ -1,23 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="5.0"
-         xmlns="https://jakarta.ee/xml/ns/jakartaee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd">
-
-    <!-- Trang mặc định sau khi login -->
+<web-app version="5.0" xmlns="https://jakarta.ee/xml/ns/jakartaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd">
     <welcome-file-list>
         <welcome-file>home</welcome-file>
     </welcome-file-list>
-
-    <!-- Cấu hình session -->
     <session-config>
         <session-timeout>30</session-timeout>
-        <!-- Phần fix quan trọng -->
-        <tracking-mode>COOKIE</tracking-mode>
-        <tracking-mode>URL</tracking-mode>
     </session-config>
-
-    <!-- HomeServlet -->
     <servlet>
         <servlet-name>HomeServlet</servlet-name>
         <servlet-class>controller.HomeServlet</servlet-class>
@@ -26,8 +14,6 @@
         <servlet-name>HomeServlet</servlet-name>
         <url-pattern>/home</url-pattern>
     </servlet-mapping>
-
-    <!-- LogoutServlet -->
     <servlet>
         <servlet-name>LogoutServlet</servlet-name>
         <servlet-class>controller.auth.LogoutServlet</servlet-class>
@@ -36,8 +22,6 @@
         <servlet-name>LogoutServlet</servlet-name>
         <url-pattern>/logout</url-pattern>
     </servlet-mapping>
-
-    <!-- SignupServlet -->
     <servlet>
         <servlet-name>SignupServlet</servlet-name>
         <servlet-class>controller.auth.SignupServlet</servlet-class>
@@ -47,38 +31,8 @@
         <url-pattern>/signup</url-pattern>
     </servlet-mapping>
 
-    <!-- LoginServlet -->
-    <servlet>
-        <servlet-name>LoginServlet</servlet-name>
-        <servlet-class>controller.auth.LoginServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>LoginServlet</servlet-name>
-        <url-pattern>/login</url-pattern>
-    </servlet-mapping>
-
-    <!-- GoogleAuthServlet -->
-    <servlet>
-        <servlet-name>GoogleAuthServlet</servlet-name>
-        <servlet-class>controller.auth.GoogleAuthServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>GoogleAuthServlet</servlet-name>
-        <url-pattern>/login-google</url-pattern>
-    </servlet-mapping>
-
-    <!-- FacebookAuthServlet -->
-    <servlet>
-        <servlet-name>FacebookAuthServlet</servlet-name>
-        <servlet-class>controller.auth.FacebookAuthServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>FacebookAuthServlet</servlet-name>
-        <url-pattern>/facebook-auth</url-pattern>
-    </servlet-mapping>
-
-
-    <welcome-file-list>
-        <welcome-file>home.jsp</welcome-file>
-    </welcome-file-list>
+    <mime-mapping>
+        <extension>mp3</extension>
+        <mime-type>audio/mpeg</mime-type>
+    </mime-mapping>
 </web-app>

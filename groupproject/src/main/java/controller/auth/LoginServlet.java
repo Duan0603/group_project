@@ -17,7 +17,7 @@ public class LoginServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Check cookie Remember Me
+// Check cookie Remember Me như cũ
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             String rememberedUsernameOrEmail = null;
@@ -43,6 +43,16 @@ public class LoginServlet extends HttpServlet {
             }
         }
 
+        // 🆕 Nhận lỗi từ param nếu có (ví dụ ?error=like)
+        String error = request.getParameter("error");
+        if (error != null) {
+            if (error.equals("like")) {
+                request.setAttribute("error", "Bạn cần đăng nhập để thích bài hát!");
+            } else {
+                request.setAttribute("error", "Bạn cần đăng nhập để thực hiện thao tác.");
+            }
+        }
+
         // Nếu chưa login, hiển thị form login
         request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);
     }
@@ -61,16 +71,12 @@ public class LoginServlet extends HttpServlet {
         if (user != null) {
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
-            if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-                request.getRequestDispatcher("/WEB-INF/views/admin.jsp").forward(request, response);
-            } else {
 
-                if (rememberMe != null) {
-                    addRememberMeCookies(response, usernameOrEmail, password);
-                }
-
-                response.sendRedirect(request.getContextPath() + "/home");
+            if (rememberMe != null) {
+                addRememberMeCookies(response, usernameOrEmail, password);
             }
+
+            response.sendRedirect(request.getContextPath() + "/home");
         } else {
             request.setAttribute("error", "Sai tên đăng nhập hoặc mật khẩu!");
             request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);

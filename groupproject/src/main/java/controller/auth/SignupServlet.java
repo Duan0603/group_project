@@ -27,8 +27,6 @@ public class SignupServlet extends HttpServlet {
         user.setUsername(username);
         user.setPassword(password);
         user.setEmail(email);
-        user.setRole("USER");
-        user.setStatus(true);
         UserDAO userDAO = new UserDAO();
         boolean success = userDAO.register(user);
         if (success) {
@@ -36,6 +34,6 @@ public class SignupServlet extends HttpServlet {
         } else {
             request.setAttribute("error", "Đăng ký thất bại. Tên đăng nhập hoặc email đã tồn tại!");
         }
-        request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/auth/signup.jsp").forward(request, response);
     }
 } 
