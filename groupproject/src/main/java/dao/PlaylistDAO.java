@@ -159,8 +159,18 @@ public List<Playlist> getPlaylistsByUser(int userID) {
 
     // Xóa playlist
     public boolean deletePlaylist(int playlistID) {
+        // Xóa các bản ghi liên quan trong PlaylistSongs trước
+        String deleteSongsSql = "DELETE FROM PlaylistSongs WHERE PlaylistID = ?";
+        try (PreparedStatement delSongsStmt = conn.prepareStatement(deleteSongsSql)) {
+            delSongsStmt.setInt(1, playlistID);
+            delSongsStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+        
+        // Sau đó mới UPDATE Status = 0
         String sql = "UPDATE Playlists SET Status = 0 WHERE PlaylistID = ?";
-
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, playlistID);
             int rowsAffected = stmt.executeUpdate();
@@ -400,6 +410,90 @@ public List<Integer> getPlaylistIdsContainingSong(int userId, int songId) {
             e.printStackTrace();
             return false;
         }
+    }
+
+    // Xóa tất cả playlist của user
+    public boolean deleteAllPlaylistsByUser(int userId) {
+        String selectSql = "SELECT PlaylistID FROM Playlists WHERE UserID = ?";
+        try (PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
+            selectStmt.setInt(1, userId);
+            ResultSet rs = selectStmt.executeQuery();
+            List<Integer> playlistIds = new ArrayList<>();
+            while (rs.next()) {
+                playlistIds.add(rs.getInt("PlaylistID"));
+            }
+            if (playlistIds.isEmpty()) return false;
+            String inClause = playlistIds.toString().replace('[', '(').replace(']', ')');
+            String deleteSongsSql = "DELETE FROM PlaylistSongs WHERE PlaylistID IN " + inClause;
+            try (PreparedStatement delSongsStmt = conn.prepareStatement(deleteSongsSql)) {
+                delSongsStmt.executeUpdate();
+            }
+            String deletePlaylistsSql = "DELETE FROM Playlists WHERE PlaylistID IN " + inClause;
+            try (PreparedStatement delPlaylistsStmt = conn.prepareStatement(deletePlaylistsSql)) {
+                int rows = delPlaylistsStmt.executeUpdate();
+                return rows > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // Xóa playlist theo tên và userId
+    public boolean deletePlaylistByNameAndUser(String name, int userId) {
+        // Lấy PlaylistID trước
+        Integer playlistId = getPlaylistIdByName(name, userId);
+        if (playlistId == null) return false;
+        
+        // Xóa các bản ghi liên quan trong PlaylistSongs trước
+        String deleteSongsSql = "DELETE FROM PlaylistSongs WHERE PlaylistID = ?";
+        try (PreparedStatement delSongsStmt = conn.prepareStatement(deleteSongsSql)) {
+            delSongsStmt.setInt(1, playlistId);
+            delSongsStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+        
+        // Sau đó mới xóa playlist
+        String deletePlaylistSql = "DELETE FROM Playlists WHERE PlaylistID = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(deletePlaylistSql)) {
+            stmt.setInt(1, playlistId);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // Xóa tất cả playlist AI đã tạo của user
+    public boolean deleteAllAIPlaylistsByUser(int userId) {
+        String selectSql = "SELECT PlaylistID FROM Playlists WHERE UserID = ? AND (Name LIKE 'AI:%' OR Name LIKE 'Playlist AI%')";
+        try (PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
+            selectStmt.setInt(1, userId);
+            ResultSet rs = selectStmt.executeQuery();
+            List<Integer> playlistIds = new ArrayList<>();
+            while (rs.next()) {
+                playlistIds.add(rs.getInt("PlaylistID"));
+            }
+            if (playlistIds.isEmpty()) return false;
+            // Xóa các bản ghi liên quan trong PlaylistSongs
+            String inClause = playlistIds.toString().replace('[', '(').replace(']', ')');
+            String deleteSongsSql = "DELETE FROM PlaylistSongs WHERE PlaylistID IN " + inClause;
+            try (PreparedStatement delSongsStmt = conn.prepareStatement(deleteSongsSql)) {
+                delSongsStmt.executeUpdate();
+            }
+            // Xóa các playlist
+            String deletePlaylistsSql = "DELETE FROM Playlists WHERE PlaylistID IN " + inClause;
+            try (PreparedStatement delPlaylistsStmt = conn.prepareStatement(deletePlaylistsSql)) {
+                int rows = delPlaylistsStmt.executeUpdate();
+                return rows > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
 }

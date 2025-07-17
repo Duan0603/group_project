@@ -419,4 +419,56 @@ public static String toImageFileName(String title) {
             return false;
         }
     }
+
+    // Lấy danh sách nghệ sĩ duy nhất
+    public List<String> getDistinctArtists() {
+        List<String> artists = new ArrayList<>();
+        String sql = "SELECT DISTINCT Artist FROM Songs WHERE Status = 1";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                String artist = rs.getString("Artist");
+                if (artist != null && !artist.trim().isEmpty()) {
+                    artists.add(artist.trim());
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return artists;
+    }
+
+    // Lấy danh sách thể loại duy nhất
+    public List<String> getDistinctGenres() {
+        List<String> genres = new ArrayList<>();
+        String sql = "SELECT DISTINCT Genre FROM Songs WHERE Status = 1";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                String genre = rs.getString("Genre");
+                if (genre != null && !genre.trim().isEmpty()) {
+                    genres.add(genre.trim());
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return genres;
+    }
+
+    // Lấy danh sách bài hát theo thể loại, giới hạn số lượng
+    public List<Songs> getSongsByGenre(String genre, int limit) {
+        List<Songs> songs = new ArrayList<>();
+        String sql = "SELECT TOP " + limit + " * FROM Songs WHERE Genre = ? AND Status = 1";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, genre);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                songs.add(mapResultSetToSong(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return songs;
+    }
 }

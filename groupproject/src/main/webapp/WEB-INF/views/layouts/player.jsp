@@ -448,8 +448,17 @@
         });
 
         document.addEventListener('keydown', function (e) {
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
-                e.preventDefault();
+            // Chỉ phát nhạc khi không nhập liệu
+            const active = document.activeElement;
+            const isTyping = (
+                active && (
+                    active.tagName === 'INPUT' ||
+                    active.tagName === 'TEXTAREA' ||
+                    active.isContentEditable
+                )
+            );
+            // Phím Enter phát nhạc, Space là phím cách bình thường
+            if (e.code === 'Enter' && !isTyping) {
                 playBtn.click();
             }
         });
