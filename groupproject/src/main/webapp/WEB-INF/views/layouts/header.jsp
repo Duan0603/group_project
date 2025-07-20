@@ -147,6 +147,9 @@
             <c:choose>
                 <c:when test="${user != null}">
                     <!-- Nếu đã đăng nhập thì hiện chuông + avatar -->
+                    <a class="nav-link" href="${pageContext.request.contextPath}/details/liked-songs?action=likedSongs">
+                        <i class="fas fa-heart" style="color:#e84393;"></i> Bài hát đã thích
+                    </a>
                     <button class="icon-btn" title="Thông báo">
                         <i class="fas fa-bell"></i>
                     </button>

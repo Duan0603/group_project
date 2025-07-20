@@ -1,4 +1,14 @@
-﻿-- Create database
+﻿USE master;
+GO
+
+ALTER DATABASE MusicManagement
+SET SINGLE_USER
+WITH ROLLBACK IMMEDIATE;
+GO
+
+DROP DATABASE IF EXISTS MusicManagement;
+GO
+-- Create database
 CREATE DATABASE MusicManagement;
 GO
 
@@ -14,19 +24,15 @@ CREATE TABLE Users (
                        Role VARCHAR(20) DEFAULT 'USER',
                        CreatedDate DATETIME DEFAULT GETDATE(),
                        LastLogin DATETIME,
+Reset_token VARCHAR(255),
+Reset_token_expiry VARCHAR(255),
+Provider VARCHAR(20) DEFAULT 'local',
+GoogleID VARCHAR(50),
+FacebookID VARCHAR(100),
                        Status BIT DEFAULT 1,
+                       Premium BIT DEFAULT 0,
+                       PremiumDate DATETIME NULL
 );
-
-ALTER TABLE Users
-    ADD Reset_token VARCHAR(255);
-ALTER TABLE Users ADD Reset_token_expiry VARCHAR(255);
-
-ALTER TABLE Users ADD Provider VARCHAR(20) DEFAULT 'local';
-ALTER TABLE Users ADD GoogleID VARCHAR(50);
-ALTER TABLE Users ADD FacebookID VARCHAR(100);
-ALTER TABLE Users DROP COLUMN FullName;
-ALTER TABLE Users
-    ALTER COLUMN Username NVARCHAR(50) NOT NULL;
 
 -- Artists table (extends Users)
 CREATE TABLE Artists (
@@ -76,7 +82,7 @@ CREATE TABLE Playlists (
 
 -- PlaylistSongs table (junction table for Playlists and Songs)
 CREATE TABLE PlaylistSongs (
-                               PlaylistID INT,
+PlaylistID INT,
                                SongID INT,
                                AddedDate DATETIME DEFAULT GETDATE(),
                                PRIMARY KEY (PlaylistID, SongID),
@@ -126,6 +132,14 @@ CREATE TABLE Likes (
                        FOREIGN KEY (userId) REFERENCES Users(UserID),
                        FOREIGN KEY (songId) REFERENCES Songs(SongID)
 );
+CREATE TABLE Orders (
+    OrderID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT FOREIGN KEY REFERENCES Users(UserID),
+    OrderDate DATETIME DEFAULT GETDATE(),
+    Amount DECIMAL(10, 2) NOT NULL,
+    Description NVARCHAR(255)
+);
+GO
 
 BEGIN TRY
     BEGIN TRAN;  -- Bắt đầu giao dịch
@@ -140,7 +154,7 @@ BEGIN TRY
     IF @uq_name IS NOT NULL
         BEGIN
             DECLARE @sql NVARCHAR(MAX);
-            SET @sql = N'ALTER TABLE Users DROP CONSTRAINT ' + QUOTENAME(@uq_name);
+SET @sql = N'ALTER TABLE Users DROP CONSTRAINT ' + QUOTENAME(@uq_name);
             EXEC sp_executesql @sql;
         END
 
@@ -263,3 +277,4 @@ VALUES
     (N'2022', N'W/n', N'W/n', N'Nhạc Trẻ, Pop', 200, '2022-01-01', '/songs/2022-WN.mp3', '/coverImages/wn.png'),
     (N'3107_4', N'W/n', N'W/n', N'Nhạc Trẻ, R&B', 213, '2019-07-31', '/songs/3107_4-WN.mp3', '/coverImages/wn.png'),
     (N'3107_3', N'W/n', N'W/n', N'Nhạc Trẻ, R&B', 235, '2019-07-30', '/songs/3107_3-WN.mp3', '/coverImages/wn.png');
+

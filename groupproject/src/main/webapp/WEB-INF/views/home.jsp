@@ -778,7 +778,7 @@
                                      '${pageContext.request.contextPath}/play?file=${his.song.filePath}',
                                      '${his.song.title}',
                                      '${his.song.artist}',
-                                     '${pageContext.request.contextPath}/songImages/${his.song.title}.jpg',
+                                     '${his.song.songID ? his.song.songID : ''}',
                                      this)">
                                 <img src="${pageContext.request.contextPath}/songImages/${his.song.title}.jpg"
                                      onerror="this.src='https://via.placeholder.com/48x48/333333/ffffff?text=♪'" alt="cover"/>
@@ -911,7 +911,7 @@
                         </button>
                         <div class="carousel-items">
                             <c:forEach var="s" items="${newSongs}">
-                                <div class="card" data-url="${pageContext.request.contextPath}/play?file=${fn:replace(s.filePath, ' ', '%20')}" data-title="${fn:escapeXml(s.title)}" data-artist="${fn:escapeXml(s.artist)}">
+                                <div class="card" data-url="${pageContext.request.contextPath}/play?file=${fn:replace(s.filePath, ' ', '%20')}" data-title="${fn:escapeXml(s.title)}" data-artist="${fn:escapeXml(s.artist)}" data-songid="${s.songID}">
                                     <a href="${pageContext.request.contextPath}/songDetail?title=${fn:escapeXml(s.title)}">
                                         <img src="${s.coverImage}" alt="${s.title}">
                                     </a>
@@ -1048,28 +1048,23 @@
                 panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
             }
 
-            function playSong(audioUrl, title, artist, element) {
+            function playSong(audioUrl, title, artist, songId, element) {
                 const audio = document.getElementById('audioPlayer');
                 const titleEl = document.getElementById('mediaTitle');
                 const artistEl = document.getElementById('mediaArtist');
                 const thumbnailEl = document.getElementById('mediaThumbnail');
 
-                // Set new audio source
                 audio.src = audioUrl;
                 audio.play();
-
-                // Update song information
                 titleEl.textContent = title || "Chưa có bài hát";
                 artistEl.textContent = artist || "Không rõ nghệ sĩ";
-
-                // Handle image from song title
                 const imgName = toImageFileName(title);
                 thumbnailEl.src = '<%= request.getContextPath() %>/songImages/' + imgName;
                 thumbnailEl.onerror = () => {
                     thumbnailEl.src = '<%= request.getContextPath() %>/songImages/default.jpg';
                 };
-
-                // Highlight bài hát đang phát
+                window._currentSongId = songId;
+                if (typeof checkLike === 'function') checkLike(songId);
                 highlightCurrentSong();
             }
 
@@ -1101,10 +1096,13 @@
                 window.currentSongList = allCards.map(c => ({
                     filePath: c.getAttribute('data-url')?.split('file=')[1] || '',
                     title: c.getAttribute('data-title'),
-                    artist: c.getAttribute('data-artist')
+                    artist: c.getAttribute('data-artist'),
+                    songID: c.getAttribute('data-songid') || ''
                 }));
                 window.currentSongIndex = allCards.indexOf(card);
-                window.playSongFromList(window.currentSongList, window.currentSongIndex);
+                const s = window.currentSongList[window.currentSongIndex];
+                const url = card.getAttribute('data-url');
+                playSong(url, s.title, s.artist, s.songID, card);
                 if (typeof setupAutoNext === 'function') setupAutoNext();
             }
 
@@ -1206,7 +1204,8 @@
                             const nextUrl = nextCard.getAttribute('data-url');
                             const nextTitle = nextCard.querySelector('.card-title a').textContent;
                             const nextArtist = nextCard.querySelector('.card-subtitle').textContent;
-                            playSong(nextUrl, nextTitle, nextArtist, nextCard);
+                            const nextSongId = nextCard.getAttribute('data-songid') || '';
+                            playSong(nextUrl, nextTitle, nextArtist, nextSongId, nextCard);
                         }
                     });
                 }
@@ -1219,7 +1218,7 @@
                 if (!songList || !songList[index]) return;
                 const s = songList[index];
                 const url = '<%= request.getContextPath() %>/play?file=' + encodeURIComponent(s.filePath);
-                playSong(url, s.title, s.artist, null);
+                playSong(url, s.title, s.artist, s.songID ? s.songID : (s.songId ? s.songId : ''), null);
             };
 
             function playAlbumSongs(btn, albumName) {
