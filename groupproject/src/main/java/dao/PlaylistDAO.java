@@ -4,7 +4,7 @@ import model.Playlist;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import dao.SongDAO;
+import model.Songs;
 
 public class PlaylistDAO {
     private final Connection conn;
@@ -60,7 +60,7 @@ public class PlaylistDAO {
 
   public Playlist getPlaylistByName(String name, int userId) {
     Playlist playlist = null;
-    String sql = "SELECT * FROM Playlists WHERE Name = ? AND UserID = ? AND Status = 1"; // Status = 1 để chỉ lấy playlist còn hoạt động
+    String sql = "SELECT * FROM Playlists WHERE Name = ? AND UserID = ? AND Status = 1";
 
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
         stmt.setString(1, name);
@@ -71,12 +71,13 @@ public class PlaylistDAO {
             playlist = new Playlist(
                 rs.getInt("PlaylistID"),
                 rs.getInt("UserID"),
-                0, // Không chứa songID trong bảng Playlists
+                0, // songID không có trong bảng Playlist
                 rs.getString("Name"),
                 rs.getString("Description"),
                 rs.getTimestamp("CreatedDate"),
                 rs.getBoolean("IsPublic"),
-                rs.getBoolean("Status")
+                rs.getBoolean("Status"),
+                "default.jpg" // Gán thumbnail trực tiếp vào constructor
             );
         }
     } catch (SQLException e) {
@@ -84,6 +85,7 @@ public class PlaylistDAO {
     }
     return playlist;
 }
+
   
     // Lấy playlist theo UserID
 public List<Playlist> getPlaylistsByUser(int userID) {
@@ -98,36 +100,73 @@ public List<Playlist> getPlaylistsByUser(int userID) {
             Playlist playlist = new Playlist(
                 rs.getInt("PlaylistID"),
                 rs.getInt("UserID"),
-                0, // Không có songID trong bảng này
+                0, // songID không cần ở đây
                 rs.getString("Name"),
                 rs.getString("Description"),
                 rs.getTimestamp("CreatedDate"),
                 rs.getBoolean("IsPublic"),
-                rs.getBoolean("Status")
+                rs.getBoolean("Status"),
+                     "default.jpg"
             );
-            // Lấy ảnh bài hát đầu tiên trong playlist
-            String imgSql = "SELECT TOP 1 s.CoverImage FROM Songs s JOIN PlaylistSongs ps ON s.SongID = ps.SongID WHERE ps.PlaylistID = ? ORDER BY ps.AddedAt ASC";
-            try (PreparedStatement imgStmt = conn.prepareStatement(imgSql)) {
-                imgStmt.setInt(1, playlist.getPlaylistID());
-                ResultSet imgRs = imgStmt.executeQuery();
-                if (imgRs.next()) {
-                    playlist.setFirstSongImage(imgRs.getString("CoverImage"));
-                } else {
-                    playlist.setFirstSongImage("default.jpg");
-                }
-            } catch (Exception e) {
-                playlist.setFirstSongImage("default.jpg");
+
+            // Gán thumbnail theo bài hát đầu tiên nếu có
+            List<Songs> songs = new SongDAO().getSongsByPlaylistId(playlist.getPlaylistID());
+            if (!songs.isEmpty()) {
+                String title = songs.get(0).getTitle();
+                String thumbnail = toImageFileName(title);
+                playlist.setThumbnail(thumbnail);
+            } else {
+                playlist.setThumbnail("default.jpg");
             }
+
             playlists.add(playlist);
         }
     } catch (SQLException e) {
         e.printStackTrace();
     }
+
     return playlists;
 }
 
+private String toImageFileName(String title) {
+    if (title == null || title.trim().isEmpty()) {
+        return "default.jpg";
+    }
+
+    try {
+        String noDiacritics = java.text.Normalizer.normalize(title.trim(), java.text.Normalizer.Form.NFD)
+            .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "")
+            .replace("đ", "d").replace("Đ", "D");
+
+        String[] words = noDiacritics.split("[^a-zA-Z0-9]+");
+        if (words.length == 0) {
+            return "default.jpg";
+        }
+
+        StringBuilder pascalCase = new StringBuilder();
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                pascalCase.append(Character.toUpperCase(word.charAt(0)));
+                if (word.length() > 1) {
+                    pascalCase.append(word.substring(1).toLowerCase());
+                }
+            }
+        }
+
+        String fileName = pascalCase.toString();
+        if (fileName.isEmpty()) return "default.jpg";
+        if (fileName.length() > 50) fileName = fileName.substring(0, 50);
+
+        return fileName + ".jpg";
+    } catch (Exception e) {
+        System.err.println("Error generating image from title: " + e.getMessage());
+        return "default.jpg";
+    }
+}
+
+
     // Lấy playlist theo PlaylistID
-    public Playlist getPlaylistById(int playlistID) {
+public Playlist getPlaylistById(int playlistID) {
     Playlist playlist = null;
     String sql = "SELECT * FROM Playlists WHERE PlaylistID = ? AND Status = 1";
 
@@ -143,7 +182,8 @@ public List<Playlist> getPlaylistsByUser(int userID) {
                 rs.getString("Description"),
                 rs.getTimestamp("CreatedDate"),
                 rs.getBoolean("IsPublic"),
-                rs.getBoolean("Status")
+                rs.getBoolean("Status"),
+                "default.jpg" // Gán thumbnail mặc định
             );
         }
     } catch (SQLException e) {
@@ -241,25 +281,25 @@ public List<Integer> getSongsInPlaylist(int playlistId) {
     }
     return list;
 }
-    private Playlist mapResultSetToPlaylist(ResultSet rs) throws SQLException {
-    Playlist playlist = new Playlist(
+private Playlist mapResultSetToPlaylist(ResultSet rs) throws SQLException {
+    return new Playlist(
         rs.getInt("PlaylistID"),
         rs.getInt("UserID"),
-        0, // songID không có trong bảng Playlists
+        0, // songID không tồn tại trong bảng Playlists
         rs.getString("Name"),
         rs.getString("Description"),
         rs.getTimestamp("CreatedDate"),
         rs.getBoolean("IsPublic"),
-        rs.getBoolean("Status")
+        rs.getBoolean("Status"),
+        "default.jpg" // Gán thumbnail mặc định
     );
-    return playlist;
 }
     
     public int countSongsInPlaylist(int playlistId) {
     String sql = "SELECT COUNT(*) FROM PlaylistSongs WHERE PlaylistID = ?";
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
         stmt.setInt(1, playlistId);
-        ResultSet rs = stmt.executeQuery();
+        ResultSet rs = stmt.executeQuery(); 
         if (rs.next()) {
             return rs.getInt(1);
         }
@@ -348,29 +388,30 @@ public List<Integer> getPlaylistIdsContainingSong(int userId, int songId) {
 
     // Lấy tất cả playlist (mới nhất lên đầu)
     public List<Playlist> getAllPlaylists() {
-        List<Playlist> playlists = new ArrayList<>();
-        String sql = "SELECT PlaylistID, Name, UserID FROM Playlists WHERE Status = 1 ORDER BY PlaylistID DESC";
-        try (PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                Playlist playlist = new Playlist(
-                    rs.getInt("PlaylistID"),
-                    rs.getInt("UserID"),
-                    0, // Không chứa songID ở đây
-                    rs.getString("Name"),
-                    "", // Không lấy description ở đây
-                    null, // Không lấy createdDate ở đây
-                    true, // Không lấy isPublic ở đây
-                    true  // Status = 1
-                );
-                playlists.add(playlist);
-            }
-        } catch (SQLException e) {
-            System.err.println("[PlaylistDAO] SQL Error fetching all playlists: " + e.getMessage());
-            e.printStackTrace();
+    List<Playlist> playlists = new ArrayList<>();
+    String sql = "SELECT PlaylistID, Name, UserID FROM Playlists WHERE Status = 1 ORDER BY PlaylistID DESC";
+    try (PreparedStatement stmt = conn.prepareStatement(sql);
+         ResultSet rs = stmt.executeQuery()) {
+        while (rs.next()) {
+            Playlist playlist = new Playlist(
+                rs.getInt("PlaylistID"),
+                rs.getInt("UserID"),
+                0,               // Không có songID ở đây
+                rs.getString("Name"),
+                "",              // Không lấy description
+                null,            // Không lấy createdDate
+                true,            // Giả định là public
+                true,            // Status luôn là true do WHERE đã lọc
+                "default.jpg"    // Gán thumbnail mặc định
+            );
+            playlists.add(playlist);
         }
-        return playlists;
+    } catch (SQLException e) {
+        System.err.println("[PlaylistDAO] SQL Error fetching all playlists: " + e.getMessage());
+        e.printStackTrace();
     }
+    return playlists;
+}
 
     // Tạo playlist mới và trả về ID vừa tạo
     public int createPlaylistAndGetId(String playlistName, int userId) {
@@ -480,7 +521,69 @@ public List<Integer> getPlaylistIdsContainingSong(int userId, int songId) {
         }
         return false;
     }
+    
+    public String getFirstSongTitleInPlaylist(int playlistId) {
+    String sql = "SELECT TOP 1 s.Title FROM Songs s JOIN PlaylistSongs ps ON s.SongID = ps.SongID " +
+                 "WHERE ps.PlaylistID = ? ORDER BY ps.AddedDate ASC";
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, playlistId);
+        ResultSet rs = stmt.executeQuery();
+        if (rs.next()) {
+            return rs.getString("Title");
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return null;
+}
+    
+    private String getFirstSongThumbnail(int playlistId) {
+    String sql = "SELECT TOP 1 s.Thumbnail FROM PlaylistSongs ps " +
+                 "JOIN Songs s ON ps.SongID = s.SongID " +
+                 "WHERE ps.PlaylistID = ? ORDER BY ps.SongID ASC";
 
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, playlistId);
+        ResultSet rs = stmt.executeQuery();
+        if (rs.next()) {
+            return rs.getString("Thumbnail");
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return "default.jpg"; // fallback
+}
+
+    public List<Playlist> getPlaylistsWithThumbnails(int userId) {
+    List<Playlist> playlists = new ArrayList<>();
+    String sql = "SELECT p.*, " +
+                 "(SELECT TOP 1 s.Thumbnail FROM PlaylistSongs ps " +
+                 "JOIN Songs s ON ps.SongID = s.SongID " +
+                 "WHERE ps.PlaylistID = p.PlaylistID ORDER BY ps.SongID ASC) AS Thumbnail " +
+                 "FROM Playlists p WHERE p.UserID = ? AND p.Status = 1";
+
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, userId);
+        ResultSet rs = stmt.executeQuery();
+        while (rs.next()) {
+            Playlist playlist = new Playlist(
+                rs.getInt("PlaylistID"),
+                rs.getInt("UserID"),
+                0,
+                rs.getString("Name"),
+                rs.getString("Description"),
+                rs.getTimestamp("CreatedDate"),
+                rs.getBoolean("IsPublic"),
+                rs.getBoolean("Status"),
+                rs.getString("Thumbnail") != null ? rs.getString("Thumbnail") : "default.jpg"
+            );
+            playlists.add(playlist);
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return playlists;
+}
     // Xóa tất cả playlist AI đã tạo của user
     public boolean deleteAllAIPlaylistsByUser(int userId) {
         String selectSql = "SELECT PlaylistID FROM Playlists WHERE UserID = ? AND (Name LIKE 'AI:%' OR Name LIKE 'Playlist AI%')";
