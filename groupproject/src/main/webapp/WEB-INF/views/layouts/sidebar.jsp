@@ -266,16 +266,26 @@
 
             <!-- Danh sách playlist -->
             <div class="library-section" id="userPlaylistsSidebar">
-                <h4 style="margin-left: 16px;">🎵 Playlist của bạn</h4>
-                <c:forEach var="playlist" items="${userPlaylists}">
-                    <a href="playlistDetail?playlistId=${playlist.playlistID}" class="library-item">
-                        <div class="library-item-info">
-                            <div class="library-item-title">${playlist.name}</div>
-                            <div class="library-item-subtitle">${playlist.description != null ? playlist.description : 'Playlist của bạn'}</div>
-                        </div>
-                    </a>
-                </c:forEach>
-            </div>
+  <h4 style="margin-left: 16px; margin-bottom: 8px;">🎵 Playlist của bạn</h4>
+  <div id="playlistListWrapper" style="display: flex; flex-direction: column; gap: 8px; padding: 0 8px;">
+<c:forEach var="playlist" items="${userPlaylists}">
+  <a href="playlistDetail?playlistId=${playlist.playlistID}" class="library-item" style="background-color: #1e1e1e; border-radius: 12px; padding: 10px; display: flex; align-items: center; gap: 12px; text-decoration: none;">
+    <img src="${pageContext.request.contextPath}/songImages/${playlist.thumbnail}" 
+         alt="cover"
+         onerror="this.src='https://via.placeholder.com/48x48?text=♪'" 
+         style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;" />
+    <div class="library-item-info" style="flex: 1; min-width: 0;">
+      <div class="library-item-title" style="font-size: 15px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        ${playlist.name}
+      </div>
+      <div class="library-item-subtitle" style="font-size: 12px; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        ${playlist.description != null ? playlist.description : 'Playlist của bạn'}
+      </div>
+    </div>
+  </a>
+</c:forEach>
+  </div>
+</div>
         </aside>
 
 
