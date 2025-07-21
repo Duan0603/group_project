@@ -24,7 +24,7 @@
     int seconds = totalDuration % 60;
     String formattedDuration = String.format("%d:%02d:%02d", hours, minutes, seconds);
     
-String firstSongImage = "https://via.placeholder.com/60x60/333333/ffffff?text=♪";
+    String firstSongImage = "https://via.placeholder.com/60x60/333333/ffffff?text=♪";
     if (songToPlay != null && songToPlay.getTitle() != null) {
         String fileName = dao.SongDAO.toImageFileName(songToPlay.getTitle());
         firstSongImage = "songImages/" + fileName;
@@ -200,6 +200,29 @@ String firstSongImage = "https://via.placeholder.com/60x60/333333/ffffff?text=�
 </div>
 
 <script>
+var isLoggedIn = <%= (session.getAttribute("user") != null) ? "true" : "false" %>;
+function showLoginPrompt() {
+    if (document.getElementById('loginPrompt')) return;
+    const div = document.createElement('div');
+    div.id = 'loginPrompt';
+    div.style.position = 'fixed';
+    div.style.top = '80px';
+    div.style.right = '30px';
+    div.style.background = '#3ec6ff';
+    div.style.color = '#222';
+    div.style.padding = '18px 24px';
+    div.style.borderRadius = '12px';
+    div.style.boxShadow = '0 2px 12px rgba(0,0,0,0.15)';
+    div.style.zIndex = 99999;
+    div.style.fontSize = '16px';
+    div.innerHTML = `
+        <b>Bạn đã đăng xuất</b><br>
+        Đăng nhập để thêm bài hát vào Playlist của bạn.
+        <span style="position:absolute;top:8px;right:12px;cursor:pointer;font-size:20px;" onclick="document.getElementById('loginPrompt').remove()">×</span>
+    `;
+    document.body.appendChild(div);
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
 let currentPlayingUrl = ""; // lưu bài đang phát
 
 function playFirstSong() {
@@ -338,9 +361,25 @@ function playAndSaveHistory(filePath, title, artist, songId) {
     });
 }
 
+function playSongFromRow(row) {
+    const url = row.getAttribute('data-url');
+    const title = row.getAttribute('data-title');
+    const artist = row.getAttribute('data-artist');
+    const songId = row.getAttribute('data-songid');
+    if (typeof playAndSaveHistory === 'function') {
+        playAndSaveHistory(url, title, artist, songId);
+    } else if (typeof playSong === 'function') {
+        playSong(url, title, artist, songId);
+    }
+}
+
 // ==== Playlist Popup Logic (copied/adapted from hotTrend.jsp) ====
 function showPlaylistMenu(event, songId) {
     event.stopPropagation();
+    if (!window.isLoggedIn) {
+        showLoginPrompt();
+        return;
+    }
     const menu = document.getElementById('playlistMenu');
     menu.style.display = 'block';
     menu.dataset.songId = songId;
@@ -436,3 +475,4 @@ document.addEventListener('click', function (e) {
         <div id="sidebarPlaylists" style="max-height: 140px; overflow-y: auto;"></div>
     </div>
 </div>
+<jsp:include page="/WEB-INF/views/layouts/player.jsp" />
