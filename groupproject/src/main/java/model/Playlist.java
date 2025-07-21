@@ -11,9 +11,11 @@ public class Playlist {
     private Date createdDate;
     private boolean isPublic;
     private boolean status;
+    private String thumbnail;
 
     // Constructor
-    public Playlist(int playlistID, int userID, int songID, String name, String description, Date createdDate, boolean isPublic, boolean status) {
+
+    public Playlist(int playlistID, int userID, int songID, String name, String description, Date createdDate, boolean isPublic, boolean status, String thumbnail) {
         this.playlistID = playlistID;
         this.userID = userID;
         this.songID = songID;
@@ -22,8 +24,8 @@ public class Playlist {
         this.createdDate = createdDate;
         this.isPublic = isPublic;
         this.status = status;
+        this.thumbnail = thumbnail;
     }
-    
 
     // Getters and Setters
 
@@ -89,6 +91,14 @@ public class Playlist {
 
     public void setStatus(boolean status) {
         this.status = status;
+    }
+
+    public String getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
     }
     
 }
