@@ -110,7 +110,7 @@
                              <div class="col-md-12">
                                 <div class="card">
                                     <div class="card-body">
-                                        <h5 class="card-title">Doanh thu theo ngày trong tháng</h5>
+                                        <h5 class="card-title">Doanh thu theo tháng</h5>
                                         <canvas id="revenueChart"></canvas>
                                     </div>
                                 </div>
@@ -416,10 +416,7 @@
                 options: {
                     responsive: true,
                     scales: {
-                        y: { 
-                            min: 0,
-                            ticks: { color: '#e0e0e0' } 
-                        },
+                        y: { ticks: { color: '#e0e0e0' } },
                         x: { ticks: { color: '#e0e0e0' } }
                     },
                     plugins: {

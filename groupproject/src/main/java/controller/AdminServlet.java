@@ -48,8 +48,8 @@ public class AdminServlet extends HttpServlet {
         
         
         // LẤY DỮ LIỆU CHO BIỂU ĐỒ
-        String dailyRevenueData = orderDAO.getDailyRevenueForChart();
-        request.setAttribute("monthlyRevenueData", dailyRevenueData);
+        String monthlyRevenueData = orderDAO.getMonthlyRevenueForChart();
+        request.setAttribute("monthlyRevenueData", monthlyRevenueData);
 
         // Lấy danh sách chi tiết cho các bảng quản lý
         request.setAttribute("userList", userDAO.getAllUsers());

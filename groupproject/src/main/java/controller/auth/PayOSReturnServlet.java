@@ -1,7 +1,6 @@
 package controller.auth;
 
 import dao.UserDAO;
-import dao.OrderDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -29,13 +28,10 @@ public class PayOSReturnServlet extends HttpServlet {
         if ("PAID".equalsIgnoreCase(status) || "SUCCESS".equalsIgnoreCase(status)) {
             // Cập nhật trạng thái premium cho user
             UserDAO userDAO = new UserDAO();
-            OrderDAO orderDAO = new OrderDAO();
             // userDAO.setPremium(user.getUserId(), true);
             user.setPremium(true);
             session.setAttribute("user", user);
             userDAO.setPremiumAndDate(user.getUserId(), true);
-            // Tạo đơn hàng mới vào bảng Orders
-            orderDAO.createOrder(user.getUserId(), 20000, "Nâng cấp tài khoản Premium qua PayOS");
             response.sendRedirect(request.getContextPath() + "/home?premium=success");
             return;
         } else {

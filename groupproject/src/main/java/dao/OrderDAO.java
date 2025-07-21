@@ -40,27 +40,27 @@ public class OrderDAO extends DBContext {
     }
 
     /**
-     * Lấy dữ liệu doanh thu từng ngày trong tháng hiện tại để vẽ biểu đồ.
+     * Lấy dữ liệu doanh thu của 6 tháng gần nhất để vẽ biểu đồ.
      * @return Một chuỗi JSON chứa nhãn (labels) và dữ liệu (data).
      */
-    public String getDailyRevenueForChart() {
+    public String getMonthlyRevenueForChart() {
         List<String> labels = new ArrayList<>();
         List<Double> data = new ArrayList<>();
         
-        String sql = "SELECT FORMAT(OrderDate, 'dd-MM-yyyy') AS Day, SUM(Amount) AS DailyRevenue " +
+        String sql = "SELECT FORMAT(OrderDate, 'MM-yyyy') AS MonthYear, SUM(Amount) AS MonthlyRevenue " +
                      "FROM Orders " +
-                     "WHERE YEAR(OrderDate) = YEAR(GETDATE()) AND MONTH(OrderDate) = MONTH(GETDATE()) " +
-                     "GROUP BY FORMAT(OrderDate, 'dd-MM-yyyy') " +
+                     "WHERE OrderDate >= DATEADD(month, -6, GETDATE()) " +
+                     "GROUP BY FORMAT(OrderDate, 'MM-yyyy') " +
                      "ORDER BY MIN(OrderDate)";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             ResultSet rs = st.executeQuery();
             while (rs.next()) {
-                labels.add(rs.getString("Day"));
-                data.add(rs.getDouble("DailyRevenue"));
+                labels.add("Tháng " + rs.getString("MonthYear"));
+                data.add(rs.getDouble("MonthlyRevenue"));
             }
         } catch (SQLException e) {
-            System.out.println("Get daily revenue error: " + e.getMessage());
+            System.out.println("Get monthly revenue error: " + e.getMessage());
         }
 
         Map<String, Object> chartData = new HashMap<>();
