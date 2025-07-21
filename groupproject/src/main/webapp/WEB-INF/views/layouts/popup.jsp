@@ -190,6 +190,10 @@
             if (data.info) {
                 addGeminiMessage('<i>' + data.info + '</i>', false);
             }
+            // Nếu tạo playlist thành công, tự động refresh sidebar
+            if (data.success && typeof refreshPlaylistList === 'function') {
+                refreshPlaylistList();
+            }
         })
         .catch((err) => {
             // Xử lý khi có lỗi
