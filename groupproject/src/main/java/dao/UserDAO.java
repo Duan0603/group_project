@@ -187,7 +187,7 @@ public class UserDAO extends DBContext {
 
             public List<User> getAllUsers() {
                 List<User> userList = new ArrayList<>();
-                String sql = "SELECT * FROM Users WHERE Status = 1 ORDER BY UserID";
+                String sql = "SELECT * FROM Users ORDER BY UserID";
                 try (PreparedStatement st = connection.prepareStatement(sql)) {
                     ResultSet rs = st.executeQuery();
                     while (rs.next()) {
@@ -225,47 +225,36 @@ public class UserDAO extends DBContext {
                 }
             }
 
-//            public boolean deleteUser(int userId) {
-//        String[] deleteStatements = {
-//            "DELETE FROM PlaylistSongs WHERE PlaylistID IN (SELECT PlaylistID FROM Playlists WHERE UserID = ?)",
-//            "DELETE FROM Playlists WHERE UserID = ?",
-//            "DELETE FROM UserFavorites WHERE UserID = ?",
-//            "DELETE FROM Likes WHERE userId = ?",
-//            "DELETE FROM ListeningHistory WHERE UserID = ?",
-//            "DELETE FROM Follows WHERE followerId = ? OR followedId = ?",
-//            "DELETE FROM Users WHERE UserID = ?"
-//        };
-//
-//        try {
-//            connection.setAutoCommit(false);
-//            try (PreparedStatement st1 = connection.prepareStatement(deleteStatements[0])) { st1.setInt(1, userId); st1.executeUpdate(); }
-//            try (PreparedStatement st2 = connection.prepareStatement(deleteStatements[1])) { st2.setInt(1, userId); st2.executeUpdate(); }
-//            try (PreparedStatement st3 = connection.prepareStatement(deleteStatements[2])) { st3.setInt(1, userId); st3.executeUpdate(); }
-//            try (PreparedStatement st4 = connection.prepareStatement(deleteStatements[3])) { st4.setInt(1, userId); st4.executeUpdate(); }
-//            try (PreparedStatement st5 = connection.prepareStatement(deleteStatements[4])) { st5.setInt(1, userId); st5.executeUpdate(); }
-//            try (PreparedStatement st6 = connection.prepareStatement(deleteStatements[5])) { st6.setInt(1, userId); st6.setInt(2, userId); st6.executeUpdate(); }
-//            try (PreparedStatement st7 = connection.prepareStatement(deleteStatements[6])) { st7.setInt(1, userId); st7.executeUpdate(); }
-//            connection.commit();
-//            return true;
-//        } catch (SQLException e) {
-//            System.out.println("Delete user error: " + e.getMessage());
-//            try { connection.rollback(); } catch (SQLException ex) { System.out.println("Rollback error: " + ex.getMessage()); }
-//            return false;
-//        } finally {
-//            try { connection.setAutoCommit(true); } catch (SQLException e) { System.out.println("Set auto-commit error: " + e.getMessage()); }
-//        }
-//    }
             public boolean deleteUser(int userId) {
-        String sql = "UPDATE Users SET Status = 0 WHERE UserID = ?";
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, userId);
-            return st.executeUpdate() > 0;
+        String[] deleteStatements = {
+            "DELETE FROM PlaylistSongs WHERE PlaylistID IN (SELECT PlaylistID FROM Playlists WHERE UserID = ?)",
+            "DELETE FROM Playlists WHERE UserID = ?",
+            "DELETE FROM UserFavorites WHERE UserID = ?",
+            "DELETE FROM Likes WHERE userId = ?",
+            "DELETE FROM ListeningHistory WHERE UserID = ?",
+            "DELETE FROM Follows WHERE followerId = ? OR followedId = ?",
+            "DELETE FROM Users WHERE UserID = ?"
+        };
+
+        try {
+            connection.setAutoCommit(false);
+            try (PreparedStatement st1 = connection.prepareStatement(deleteStatements[0])) { st1.setInt(1, userId); st1.executeUpdate(); }
+            try (PreparedStatement st2 = connection.prepareStatement(deleteStatements[1])) { st2.setInt(1, userId); st2.executeUpdate(); }
+            try (PreparedStatement st3 = connection.prepareStatement(deleteStatements[2])) { st3.setInt(1, userId); st3.executeUpdate(); }
+            try (PreparedStatement st4 = connection.prepareStatement(deleteStatements[3])) { st4.setInt(1, userId); st4.executeUpdate(); }
+            try (PreparedStatement st5 = connection.prepareStatement(deleteStatements[4])) { st5.setInt(1, userId); st5.executeUpdate(); }
+            try (PreparedStatement st6 = connection.prepareStatement(deleteStatements[5])) { st6.setInt(1, userId); st6.setInt(2, userId); st6.executeUpdate(); }
+            try (PreparedStatement st7 = connection.prepareStatement(deleteStatements[6])) { st7.setInt(1, userId); st7.executeUpdate(); }
+            connection.commit();
+            return true;
         } catch (SQLException e) {
-            System.out.println("Soft delete user error: " + e.getMessage());
+            System.out.println("Delete user error: " + e.getMessage());
+            try { connection.rollback(); } catch (SQLException ex) { System.out.println("Rollback error: " + ex.getMessage()); }
             return false;
+        } finally {
+            try { connection.setAutoCommit(true); } catch (SQLException e) { System.out.println("Set auto-commit error: " + e.getMessage()); }
         }
     }
-
             
     public boolean togglePremiumStatus(int userId, boolean currentPremiumStatus) {
         String sql = "UPDATE Users SET Premium = ?, PremiumDate = ? WHERE UserID = ?";
