@@ -185,7 +185,7 @@ public List<Songs> getSongsByPlaylistId(int playlistId) {
 
         // Duyệt qua kết quả và thêm bài hát vào danh sách
         while (rs.next()) {
-            songs.add(mapResultSetToSong(rs)); // Dùng phương thức mapResultSetToSong để ánh xạ kết quả từ ResultSet
+            songs.add(mapResultSetToSong(rs));
         }
     } catch (SQLException e) {
         e.printStackTrace();
@@ -376,6 +376,23 @@ public static String toImageFileName(String title) {
         System.err.println("Error processing title: " + title + " - " + e.getMessage());
         return "default.jpg"; // Fallback on error
     }
+}
+
+public String getFirstSongThumbnailByPlaylistId(int playlistId) {
+    String sql = "SELECT TOP 1 s.Title FROM Songs s " +
+                 "JOIN PlaylistSongs ps ON s.SongID = ps.SongID " +
+                 "WHERE ps.PlaylistID = ? ORDER BY ps.AddedDate ASC";
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, playlistId);
+        ResultSet rs = stmt.executeQuery();
+        if (rs.next()) {
+            String title = rs.getString("Title");
+            return toImageFileName(title); // gọi hàm đã có
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return "default.jpg";
 }
 // cua admin
     public int countTotalSongs() {
