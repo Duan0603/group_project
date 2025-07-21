@@ -228,13 +228,12 @@
                     String safeArtist = (s.getArtist() != null ? s.getArtist().replace("'", "\\'").replace("\"", "\\\"") : "Không rõ nghệ sĩ");
                     String imageFileName = dao.SongDAO.toImageFileName(s.getTitle());
                     %>
-                    <div class="song-item" 
-                         data-song-id="<%= s.getSongID()%>" 
-                         data-url="<%= request.getContextPath()%>/play?file=<%= encodedPath%>" 
-                         data-title="<%= safeTitle %>"
-                         data-artist="<%= safeArtist %>"
-                         data-image="songImages/<%= imageFileName %>"
-                         onclick="playSong(this)">
+                    <div class="song-item"
+                         data-song-id="<%= s.getSongID() %>"
+                         data-url="<%= request.getContextPath() %>/play?file=<%= URLEncoder.encode(s.getFilePath(), "UTF-8") %>&songId=<%= s.getSongID() %>"
+                         data-title="<%= s.getTitle().replace("\"", "&quot;") %>"
+                         data-artist="<%= s.getArtist() != null ? s.getArtist().replace("\"", "&quot;") : "Không rõ nghệ sĩ" %>"
+                         onclick="playAndSaveHistory(this.getAttribute('data-url'), this.getAttribute('data-title'), this.getAttribute('data-artist'), this.getAttribute('data-song-id'))">
                         <div class="left">
                             <span style="width:24px;text-align:right;"><%= i++%></span>
                             <img src="songImages/<%= imageFileName %>" alt="" onerror="this.onerror=null; this.src='https://via.placeholder.com/48x48/333333/ffffff?text=♪';">
@@ -243,7 +242,7 @@
                         <div class="genre"><%= s.getGenre() != null ? s.getGenre() : "Chưa xác định"%></div>
                         <div class="right">
                             <div class="duration"><%= (h > 0 ? h + ":" : "") + String.format("%02d:%02d", m, sec) %></div>
-                            <span class="add-icon" onclick="showPlaylistMenu(event, <%= s.getSongID() %>)">➕</span>
+                            <span class="add-icon" onclick="showPlaylistMenu(event, '<%= s.getSongID() %>'); event.stopPropagation();">➕</span>
                         </div>
                     </div>
                     <% }%>
@@ -251,9 +250,36 @@
             </div>
         </div>
         <script>
+var isLoggedIn = <%= (session.getAttribute("user") != null) ? "true" : "false" %>;
+function showLoginPrompt() {
+    if (document.getElementById('loginPrompt')) return;
+    const div = document.createElement('div');
+    div.id = 'loginPrompt';
+    div.style.position = 'fixed';
+    div.style.top = '80px';
+    div.style.right = '30px';
+    div.style.background = '#3ec6ff';
+    div.style.color = '#222';
+    div.style.padding = '18px 24px';
+    div.style.borderRadius = '12px';
+    div.style.boxShadow = '0 2px 12px rgba(0,0,0,0.15)';
+    div.style.zIndex = 99999;
+    div.style.fontSize = '16px';
+    div.innerHTML = `
+        <b>Bạn đã đăng xuất</b><br>
+        Đăng nhập để thêm bài hát vào Playlist của bạn.
+        <span style="position:absolute;top:8px;right:12px;cursor:pointer;font-size:20px;" onclick="document.getElementById('loginPrompt').remove()">×</span>
+    `;
+    document.body.appendChild(div);
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
             
 function showPlaylistMenu(event, songId) {
     event.stopPropagation();
+    if (!window.isLoggedIn) {
+        showLoginPrompt();
+        return;
+    }
     const menu = document.getElementById('playlistMenu');
     menu.style.display = 'block';
     menu.dataset.songId = songId;
