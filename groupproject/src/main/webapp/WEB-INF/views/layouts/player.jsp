@@ -415,15 +415,7 @@
 </div>
 
 <script>
-    const contextPath = '<%= request.getContextPath() %>';
-    // Gọi API lấy queue từ session
-  fetch(contextPath + "/queue?action=getCurrentQueue")
-    .then(response => response.json())
-    .then(data => {
-      console.log("Queue từ session:", data);
-      // TODO: render ra giao diện nếu cần
-    })
-    .catch(error => console.error("Lỗi lấy queue:", error));
+var userLoggedIn = <%= (session.getAttribute("user") != null) ? "true" : "false" %>;
 </script>
 <!-- JS -->
 <script>
@@ -652,8 +644,6 @@ function updateListeningHistory(songId) {
         }
     });
 }
-
-const userLoggedIn = ${sessionScope.user != null}; // true nếu có user
 
     function playAndSaveHistory(filePath, title, artist, songId) {
         playSong(filePath, title, artist, songId);
