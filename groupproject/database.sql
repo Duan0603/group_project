@@ -79,15 +79,6 @@ CREATE TABLE Playlists (
                            Status BIT DEFAULT 1
 );
 
-CREATE TABLE Orders (
-    OrderID INT IDENTITY(1,1) PRIMARY KEY,
-    UserID INT FOREIGN KEY REFERENCES Users(UserID),
-    OrderDate DATETIME DEFAULT GETDATE(),
-    Amount DECIMAL(10, 2) NOT NULL,
-    Description NVARCHAR(255)
-);
-GO
-
 -- PlaylistSongs table (junction table for Playlists and Songs)
 CREATE TABLE PlaylistSongs (
                                PlaylistID INT,
