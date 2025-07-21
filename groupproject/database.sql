@@ -1,4 +1,4 @@
-﻿﻿-- Create database
+﻿-- Create database
 CREATE DATABASE MusicManagement;
 GO
 
@@ -14,22 +14,22 @@ CREATE TABLE Users (
                        Role VARCHAR(20) DEFAULT 'USER',
                        CreatedDate DATETIME DEFAULT GETDATE(),
                        LastLogin DATETIME,
-                       Reset_token VARCHAR(255),
-                       Reset_token_expiry VARCHAR(255),
-                       Provider VARCHAR(20) DEFAULT 'local',
-                       GoogleID VARCHAR(50),
-                       FacebookID VARCHAR(100),
+Reset_token VARCHAR(255),
+Reset_token_expiry VARCHAR(255),
+Provider VARCHAR(20) DEFAULT 'local',
+GoogleID VARCHAR(50),
+FacebookID VARCHAR(100),
                        Status BIT DEFAULT 1,
                        Premium BIT DEFAULT 0,
                        PremiumDate DATETIME NULL
 );
 
 CREATE TABLE Orders (
-                        OrderID INT IDENTITY(1,1) PRIMARY KEY,
-                        UserID INT FOREIGN KEY REFERENCES Users(UserID),
-                        OrderDate DATETIME DEFAULT GETDATE(),
-                        Amount DECIMAL(10, 2) NOT NULL,
-                        Description NVARCHAR(255)
+    OrderID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT FOREIGN KEY REFERENCES Users(UserID),
+    OrderDate DATETIME DEFAULT GETDATE(),
+    Amount DECIMAL(10, 2) NOT NULL,
+    Description NVARCHAR(255)
 );
 GO
 
@@ -80,11 +80,11 @@ CREATE TABLE Playlists (
 );
 
 CREATE TABLE Orders (
-                        OrderID INT IDENTITY(1,1) PRIMARY KEY,
-                        UserID INT FOREIGN KEY REFERENCES Users(UserID),
-                        OrderDate DATETIME DEFAULT GETDATE(),
-                        Amount DECIMAL(10, 2) NOT NULL,
-                        Description NVARCHAR(255)
+    OrderID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT FOREIGN KEY REFERENCES Users(UserID),
+    OrderDate DATETIME DEFAULT GETDATE(),
+    Amount DECIMAL(10, 2) NOT NULL,
+    Description NVARCHAR(255)
 );
 GO
 
@@ -142,35 +142,35 @@ CREATE TABLE Likes (
 );
 
 BEGIN TRY
-BEGIN TRAN;  -- Bắt đầu giao dịch
+    BEGIN TRAN;  -- Bắt đầu giao dịch
 
     -- 1. Tìm và xóa constraint UNIQUE hiện có trên Username
     DECLARE @uq_name sysname;
-SELECT @uq_name = kc.name
-FROM sys.key_constraints kc
-         INNER JOIN sys.tables t ON kc.parent_object_id = t.object_id
-WHERE t.name = 'Users' AND kc.[type] = 'UQ';
+    SELECT @uq_name = kc.name
+    FROM sys.key_constraints kc
+             INNER JOIN sys.tables t ON kc.parent_object_id = t.object_id
+    WHERE t.name = 'Users' AND kc.[type] = 'UQ';
 
-IF @uq_name IS NOT NULL
-BEGIN
+    IF @uq_name IS NOT NULL
+        BEGIN
             DECLARE @sql NVARCHAR(MAX);
             SET @sql = N'ALTER TABLE Users DROP CONSTRAINT ' + QUOTENAME(@uq_name);
-EXEC sp_executesql @sql;
-END
+            EXEC sp_executesql @sql;
+        END
 
     -- 2. Đổi kiểu Username sang NVARCHAR(50)
-ALTER TABLE Users
-ALTER COLUMN Username NVARCHAR(50) NOT NULL;
+    ALTER TABLE Users
+        ALTER COLUMN Username NVARCHAR(50) NOT NULL;
 
     -- 3. Thêm lại UNIQUE constraint rõ ràng
-ALTER TABLE Users
-    ADD CONSTRAINT UQ_Users_Username UNIQUE (Username);
+    ALTER TABLE Users
+        ADD CONSTRAINT UQ_Users_Username UNIQUE (Username);
 
-COMMIT TRAN;
-PRINT N' Đã đổi Username sang NVARCHAR(50) và thêm lại UNIQUE thành công.';
+    COMMIT TRAN;
+    PRINT N' Đã đổi Username sang NVARCHAR(50) và thêm lại UNIQUE thành công.';
 END TRY
 BEGIN CATCH
-ROLLBACK TRAN;
+    ROLLBACK TRAN;
     PRINT N' Lỗi: ' + ERROR_MESSAGE();
 END CATCH;
 
