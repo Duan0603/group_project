@@ -1,18 +1,21 @@
 package controller.details;
 
+import dao.PlaylistDAO;
 import dao.SongDAO;
-import java.io.IOException;
+import model.Playlist;
+import model.Songs;
+import model.User;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
+import java.io.IOException;
 import java.util.List;
-import model.Songs;
 
 @WebServlet(name = "ArtistSongsServlet", urlPatterns = {"/artistsongs"})
 public class ArtistSongsServlet extends HttpServlet {
     private SongDAO songDAO = new SongDAO();
+    private PlaylistDAO playlistDAO = new PlaylistDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -29,7 +32,7 @@ public class ArtistSongsServlet extends HttpServlet {
             return;
         }
 
-        // Chuẩn hóa tên để lấy ảnh
+        // Normalize image name
         String imageName = normalize(artistName) + ".png";
         request.setAttribute("artistImage", imageName);
 
@@ -37,18 +40,20 @@ public class ArtistSongsServlet extends HttpServlet {
         List<Songs> songs = songDAO.getSongsByArtist(artistName);
         request.setAttribute("songs", songs);
 
-        if (songs == null || songs.isEmpty()) {
-            request.setAttribute("message", "Không tìm thấy bài hát nào cho nghệ sĩ này.");
-        }
-
         // Tổng thời lượng
-        int totalDuration = 0;
-        for (Songs s : songs) {
-            totalDuration += s.getDuration();
-        }
+        int totalDuration = songs.stream().mapToInt(Songs::getDuration).sum();
         request.setAttribute("totalDuration", totalDuration);
 
         request.setAttribute("artistName", artistName);
+
+        // ✅ Gửi playlist của user để render sidebar
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("user") != null) {
+            User user = (User) session.getAttribute("user");
+            List<Playlist> userPlaylists = playlistDAO.getPlaylistsByUser(user.getUserId());
+            request.setAttribute("userPlaylists", userPlaylists);
+        }
+
         request.getRequestDispatcher("/WEB-INF/views/details/artistSongs.jsp").forward(request, response);
     }
 
