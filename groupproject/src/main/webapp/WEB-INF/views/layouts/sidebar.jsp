@@ -258,12 +258,6 @@
             </div>
 
 
-            <div class="library-section" id="recentListening">
-                <h4 style="margin-left: 16px;">🕒 Gần đây đã nghe</h4>
-                <!-- Lịch sử sẽ render bằng JavaScript tại đây -->
-            </div>
-
-
             <!-- Danh sách playlist -->
             <div class="library-section" id="userPlaylistsSidebar">
   <h4 style="margin-left: 16px; margin-bottom: 8px;">🎵 Playlist của bạn</h4>
@@ -293,126 +287,8 @@
             const contextPath = '${pageContext.request.contextPath}';
 
 
-            // Gọi API lấy queue từ session
-            fetch(contextPath + "/queue?action=getCurrentQueue")
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Queue từ session:", data);
-                        // TODO: render ra giao diện nếu cần
-                    })
-                    .catch(error => console.error("Lỗi lấy queue:", error));
+            // Đã xóa toàn bộ đoạn fetch, render, update liên quan đến /listening-history và lịch sử nghe
 
-            function playAndSaveHistory(filePath, title, artist, songId) {
-                playSong(filePath, title, artist, songId);
-
-                fetch(contextPath + "/listening-history", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    body: new URLSearchParams({
-                        songId: songId
-                    }),
-                    credentials: "include"
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.success) {
-                        console.error("Không thể lưu lịch sử nghe:", data.error);
-                    } else {
-                        // Sau khi lưu thành công, render lại lịch sử từ server
-                        updateListeningHistory();
-                    }
-                })
-                .catch(err => {
-                    console.error("Lỗi khi gửi lịch sử nghe:", err);
-                });
-            }
-
-
-            document.addEventListener("DOMContentLoaded", function () {
-                updateListeningHistory(); // GỌI API & render lịch sử nghe
-            });
-
-            function updateListeningHistory() {
-  fetch(contextPath + "/listening-history")
-    .then(res => res.json())
-    .then(data => {
-      const container = document.querySelector("#recentListening");
-      container.innerHTML = '<h4 style="margin-left: 16px;">🕒 Gần đây đã nghe</h4>';
-
-      if (data.length === 0) {
-        container.innerHTML += "<p style='padding: 8px;'>Chưa có bài hát nào gần đây</p>";
-        return;
-      }
-
-      data.forEach(song => {
-        const div = document.createElement("div");
-        div.className = "library-item";
-        div.innerHTML = `
-          <img src="${contextPath}/songImages/${song.thumbnail}" 
-               alt="${song.title}" 
-               onerror="this.src='https://via.placeholder.com/48x48?text=♪'" />
-          <div class="library-item-info">
-            <div class="library-item-title">${song.title}</div>
-            <div class="library-item-subtitle">${song.artist}</div>
-          </div>
-        `;
-        container.appendChild(div);
-      });
-    })
-    .catch(err => {
-      console.error("Lỗi tải lịch sử nghe:", err);
-    });
-}
-
-
-            function addToListeningHistoryUI(song) {
-                const container = document.querySelector("#recentListening");
-                let items = Array.from(container.querySelectorAll('.library-item'));
-                // Tạo div mới cho bài hát
-                const div = document.createElement("div");
-                div.className = "library-item";
-                div.innerHTML = `
-                    <img src="${contextPath}/songImages/${song.thumbnail}" 
-                         onerror="this.src='https://via.placeholder.com/48x48?text=♪'" 
-                         alt="cover" />
-                    <div class="library-item-info">
-                        <div class="library-item-title">${song.title}</div>
-                        <div class="library-item-subtitle">${song.artist}</div>
-                    </div>
-                `;
-                // Thêm vào đầu danh sách
-                if (items.length > 0) {
-                    container.insertBefore(div, items[0]);
-                } else {
-                    container.appendChild(div);
-                }
-                // Giới hạn chỉ hiển thị tối đa 5 bài
-                items = Array.from(container.querySelectorAll('.library-item'));
-                if (items.length > 5) {
-                    items[items.length - 1].remove();
-                }
-            }
-
-// ✅ Gọi hàm này sau khi gửi POST lưu lịch sử:
-            fetch(contextPath + "/listening-history", {
-                method: "POST",
-                headers: {"Content-Type": "application/x-www-form-urlencoded"},
-                body: new URLSearchParams({songId})
-            })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Không gọi updateListeningHistory nữa → chỉ cập nhật UI trực tiếp:
-                            addToListeningHistoryUI({
-                                songID: songId,
-                                title,
-                                artist,
-                                thumbnail: toImageFileName(title)
-                            });
-                        }
-                    });
 
             function openCreatePlaylistModal() {
                 const form = document.getElementById("createPlaylistForm");
@@ -427,28 +303,7 @@
                     return;
                 }
 
-                fetch(contextPath + "/listening-history", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    body: new URLSearchParams({
-                        songId: songId
-                    }),
-                    credentials: "include" // Ensure cookies (including session cookie) are sent
-                })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (!data.success) {
-                                console.error("Không thể lưu lịch sử nghe:", data.error);
-                            } else {
-                                console.log("✅ Đã lưu lịch sử, gọi cập nhật UI");
-                                updateListeningHistory(); // Update the UI
-                            }
-                        })
-                        .catch(err => {
-                            console.error("Lỗi khi gửi lịch sử nghe:", err);
-                        });
+                // Đã xóa toàn bộ đoạn fetch, render, update liên quan đến /listening-history và lịch sử nghe
             }
 
             function refreshPlaylistList() {
@@ -505,36 +360,7 @@
 
 
                                         document.addEventListener("DOMContentLoaded", function () {
-                                            fetch(contextPath + "/listening-history")
-                                                    .then(res => res.json())
-                                                    .then(data => {
-                                                        const container = document.querySelector("#recentListening");
-                                                        container.innerHTML = '<h4 style="margin-left: 16px;">🕒 Gần đây đã nghe</h4>';
-
-                                                        if (data.length === 0) {
-                                                            container.innerHTML += "<p style='padding: 8px;'>Chưa có bài hát nào gần đây</p>";
-                                                            return;
-                                                        }
-
-                                                        data.forEach(song => {
-                                                            const div = document.createElement("div");
-                                                            div.className = "library-item";
-                                                            div.onclick = () => playSong(song.filePath, song.title, song.artist, song.songID);
-                                                            div.innerHTML = `
-                    <img src="${contextPath}/songImages/${song.thumbnail}" 
-                         onerror="this.src='https://via.placeholder.com/48x48?text=♪'" 
-                         alt="cover" />
-                    <div class="library-item-info">
-                        <div class="library-item-title">${song.title}</div>
-                        <div class="library-item-subtitle">${song.artist}</div>
-                    </div>
-                `;
-                                                            container.appendChild(div);
-                                                        });
-                                                    })
-                                                    .catch(err => {
-                                                        console.error("Lỗi tải lịch sử nghe:", err);
-                                                    });
+                                            // Đã xóa toàn bộ đoạn fetch, render, update liên quan đến /listening-history và lịch sử nghe
                                         });
 
             document.addEventListener("DOMContentLoaded", function () {
