@@ -731,8 +731,66 @@
 
 <!-- Main Container -->
 <div class="main-container">
-    <!-- Left Sidebar (include sidebar.jsp) -->
-    <jsp:include page="/WEB-INF/views/layouts/sidebar.jsp" />
+    <!-- Left Sidebar (from sidebar.jsp) -->
+    <aside class="left-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="left">
+                <button onclick="toggleSidebar()" title="Thu gọn Thư viện">
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <span>Thư viện</span>
+            </div>
+            <div class="right">
+                <button class="create-button" onclick="openCreatePlaylistModal()">
+                    <i class="fas fa-plus"></i> Tạo
+                </button>
+                <button class="expand-button" title="Phóng to giao diện">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <input type="text" placeholder="Tìm kiếm..." />
+            <div class="sort-dropdown">
+                <button onclick="toggleSortOptions()">Sắp xếp theo</button>
+                <div class="sort-options" id="sortOptions">
+                    <button class="active">Gần đây ✓</button>
+                    <button>Mới thêm gần đây</button>
+                    <button>Thứ tự chữ cái</button>
+                    <button>Người sáng tạo</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="view-modes">
+            <button class="active" onclick="setViewMode('list')">Danh sách</button>
+            <button onclick="setViewMode('grid')">Lưới</button>
+        </div>
+
+        <!-- Listening History Section -->
+        <c:if test="${not empty listeningHistory}">
+            <div class="library-section" id="librarySection">
+                <h4 style="margin-left: 16px;">🕘 Đã nghe gần đây</h4>
+                <c:forEach var="his" items="${listeningHistory}">
+                    <div class="library-item"
+                         onclick="playSong(
+                                 '${pageContext.request.contextPath}/play?file=${his.song.filePath}',
+                                 '${his.song.title}',
+                                 '${his.song.artist}',
+                                 '${his.song.songID ? his.song.songID : ''}',
+                                 this)">
+                        <img src="${pageContext.request.contextPath}/songImages/${his.song.title}.jpg"
+                             onerror="this.src='https://via.placeholder.com/48x48/333333/ffffff?text=♪'" alt="cover"/>
+                        <div class="library-item-info">
+                            <div class="library-item-title">${his.song.title}</div>
+                            <div class="library-item-subtitle">${his.song.artist}</div>
+                        </div>
+                    </div>
+                </c:forEach>
+            </div>
+        </c:if>
+    </aside>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -853,7 +911,7 @@
                 </button>
                 <div class="carousel-items">
                     <c:forEach var="s" items="${newSongs}">
-                        <div class="card" data-url="${pageContext.request.contextPath}/play?file=${fn:replace(s.filePath, ' ', '%20')}" data-title="${fn:escapeXml(s.title)}" data-artist="${fn:escapeXml(s.artist)}">
+                        <div class="card" data-url="${pageContext.request.contextPath}/play?file=${fn:replace(s.filePath, ' ', '%20')}" data-title="${fn:escapeXml(s.title)}" data-artist="${fn:escapeXml(s.artist)}" data-songid="${s.songID}">
                             <a href="${pageContext.request.contextPath}/songDetail?title=${fn:escapeXml(s.title)}">
                                 <img src="${s.coverImage}" alt="${s.title}">
                             </a>
@@ -871,10 +929,9 @@
         </div>
     </main>
 
-    <jsp:include page="/WEB-INF/views/layouts/player.jsp" />
-
 </div>
-<jsp:include page="/WEB-INF/views/layouts/popup.jsp" />
+
+<jsp:include page="/WEB-INF/views/layouts/player.jsp" />
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -991,28 +1048,23 @@
         panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
     }
 
-    function playSong(audioUrl, title, artist, element) {
+    function playSong(audioUrl, title, artist, songId, element) {
         const audio = document.getElementById('audioPlayer');
         const titleEl = document.getElementById('mediaTitle');
         const artistEl = document.getElementById('mediaArtist');
         const thumbnailEl = document.getElementById('mediaThumbnail');
 
-        // Set new audio source
         audio.src = audioUrl;
         audio.play();
-
-        // Update song information
         titleEl.textContent = title || "Chưa có bài hát";
         artistEl.textContent = artist || "Không rõ nghệ sĩ";
-
-        // Handle image from song title
         const imgName = toImageFileName(title);
         thumbnailEl.src = '<%= request.getContextPath() %>/songImages/' + imgName;
         thumbnailEl.onerror = () => {
             thumbnailEl.src = '<%= request.getContextPath() %>/songImages/default.jpg';
         };
-
-        // Highlight bài hát đang phát
+        window._currentSongId = songId;
+        if (typeof checkLike === 'function') checkLike(songId);
         highlightCurrentSong();
     }
 
@@ -1044,10 +1096,13 @@
         window.currentSongList = allCards.map(c => ({
             filePath: c.getAttribute('data-url')?.split('file=')[1] || '',
             title: c.getAttribute('data-title'),
-            artist: c.getAttribute('data-artist')
+            artist: c.getAttribute('data-artist'),
+            songID: c.getAttribute('data-songid') || ''
         }));
         window.currentSongIndex = allCards.indexOf(card);
-        window.playSongFromList(window.currentSongList, window.currentSongIndex);
+        const s = window.currentSongList[window.currentSongIndex];
+        const url = card.getAttribute('data-url');
+        playSong(url, s.title, s.artist, s.songID, card);
         if (typeof setupAutoNext === 'function') setupAutoNext();
     }
 
@@ -1149,7 +1204,8 @@
                     const nextUrl = nextCard.getAttribute('data-url');
                     const nextTitle = nextCard.querySelector('.card-title a').textContent;
                     const nextArtist = nextCard.querySelector('.card-subtitle').textContent;
-                    playSong(nextUrl, nextTitle, nextArtist, nextCard);
+                    const nextSongId = nextCard.getAttribute('data-songid') || '';
+                    playSong(nextUrl, nextTitle, nextArtist, nextSongId, nextCard);
                 }
             });
         }
@@ -1162,7 +1218,7 @@
         if (!songList || !songList[index]) return;
         const s = songList[index];
         const url = '<%= request.getContextPath() %>/play?file=' + encodeURIComponent(s.filePath);
-        playSong(url, s.title, s.artist, null);
+        playSong(url, s.title, s.artist, s.songID ? s.songID : (s.songId ? s.songId : ''), null);
     };
 
     function playAlbumSongs(btn, albumName) {

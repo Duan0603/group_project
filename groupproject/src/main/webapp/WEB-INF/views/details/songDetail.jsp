@@ -3,7 +3,6 @@
 <%@ page import="model.Songs" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.net.URLEncoder" %>
-<jsp:include page="/WEB-INF/views/layouts/header.jsp" />
 
 <%
     List<Songs> songs = (List<Songs>) request.getAttribute("songs");

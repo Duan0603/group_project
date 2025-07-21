@@ -244,26 +244,19 @@
                 box-shadow: -5px 0 15px #e84393;
                 overflow-y: auto;
             }
-
-            #repeatBtn.active, #repeatBtn.active .icon {
-                color: #e84393 !important;
-                fill: #e84393 !important;
-            }
-            #repeatBtn .icon {
-                color: #fff;
-                fill: #fff;
-                transition: color 0.2s, fill 0.2s;
-            }
         </style>
 
         <!-- Media Info -->
-        <div class="media-info">
+        <div class="media-info" style="position:relative;">
             <img src="https://via.placeholder.com/60x60/333333/ffffff?text=♪"
                  alt="Media thumbnail" class="media-thumbnail" id="mediaThumbnail">
             <div class="media-details">
                 <h3 id="mediaTitle">Chưa có bài hát</h3>
                 <p id="mediaArtist">Không rõ nghệ sĩ</p>
             </div>
+            <button id="likeBtn" class="control-btn" style="margin-left:12px; font-size:22px; color:#fff; background:none; border:none; outline:none; cursor:pointer;">
+                <i class="fas fa-heart" id="likeIcon" style="color:#fff;"></i>
+            </button>
         </div>
 
         <!-- Audio -->
@@ -285,7 +278,7 @@
                 <svg class="icon" viewBox="0 0 24 24"><path d="M16 18H18V6H16V18ZM6 6V18L14.5 12L6 6Z"/></svg>
             </button>
             <button class="control-btn" id="repeatBtn" title="Repeat">
-                <svg class="icon" id="repeatIcon" viewBox="0 0 24 24"><path d="M7 7H17V10L21 6L17 2V5H5V11H7V7ZM17 17H7V14L3 18L7 22V19H19V13H17V17Z"/></svg>
+                <svg class="icon" viewBox="0 0 24 24"><path d="M7 7H17V10L21 6L17 2V5H5V11H7V7ZM17 17H7V14L3 18L7 22V19H19V13H17V17Z"/></svg>
             </button>
         </div>
 
@@ -334,6 +327,12 @@
 
 <!-- JS -->
 <script>
+    <%
+        model.User user = (model.User) session.getAttribute("user");
+        int userId = (user != null) ? user.getUserId() : -1;
+    %>
+    const USER_ID = <%= userId %>;
+
     function toggleQueueRight() {
         const panel = document.getElementById('queueRightPanel');
         panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
@@ -343,26 +342,69 @@
         document.getElementById('queueBtn').addEventListener('click', toggleQueueRight);
     });
 
-    function playSong(audioUrl, title, artist) {
+    function setLikeIcon(liked) {
+        const likeIcon = document.getElementById('likeIcon');
+        if (liked) {
+            likeIcon.style.color = '#e84393';
+        } else {
+            likeIcon.style.color = '#fff';
+        }
+    }
+
+    async function checkLike(songId) {
+        if (USER_ID < 0) { setLikeIcon(false); return; }
+        const res = await fetch('<%= request.getContextPath() %>/details/like?userId=' + USER_ID + '&songId=' + songId);
+        const data = await res.json();
+        setLikeIcon(data.liked);
+        window._liked = data.liked;
+    }
+
+    async function toggleLike(songId) {
+        if (USER_ID < 0) return;
+        if (!window._liked) {
+            await fetch('<%= request.getContextPath() %>/details/like', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'userId=' + USER_ID + '&songId=' + songId
+            });
+            setLikeIcon(true);
+            window._liked = true;
+        } else {
+            await fetch('<%= request.getContextPath() %>/details/like?userId=' + USER_ID + '&songId=' + songId, {
+                method: 'DELETE'
+            });
+            setLikeIcon(false);
+            window._liked = false;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const likeBtn = document.getElementById('likeBtn');
+        likeBtn.addEventListener('click', function() {
+            if (window._currentSongId) toggleLike(window._currentSongId);
+        });
+    });
+
+    function playSong(audioUrl, title, artist, songId) {
         const audio = document.getElementById('audioPlayer');
         const titleEl = document.getElementById('mediaTitle');
         const artistEl = document.getElementById('mediaArtist');
         const thumbnailEl = document.getElementById('mediaThumbnail');
 
-        // Set new audio source
         audio.src = audioUrl;
         audio.play();
 
-        // Cập nhật thông tin bài hát
         titleEl.textContent = title || "Chưa có bài hát";
         artistEl.textContent = artist || "Không rõ nghệ sĩ";
 
-        // Xử lý ảnh từ tên bài hát
         const imgName = toImageFileName(title);
         thumbnailEl.src = '<%= request.getContextPath() %>/songImages/' + imgName;
         thumbnailEl.onerror = () => {
             thumbnailEl.src = '<%= request.getContextPath() %>/songImages/default.jpg';
         };
+
+        window._currentSongId = songId;
+        checkLike(songId);
     }
 
     function toImageFileName(title) {
@@ -388,8 +430,6 @@
         const volumeSlider = document.getElementById('volumeSlider');
         const volumeBtn = document.getElementById('volumeBtn');
         const volumeIcon = document.getElementById('volume-icon');
-        const repeatBtn = document.getElementById('repeatBtn');
-        let isRepeat = false;
 
         audio.volume = 0.5;
         let isPlaying = false;
@@ -489,21 +529,6 @@
                 window.playSongFromList(window.currentSongList, window.currentSongIndex);
             }
         });
-
-        repeatBtn.addEventListener('click', function () {
-            isRepeat = !isRepeat;
-            repeatBtn.classList.toggle('active', isRepeat);
-        });
-
-        audio.addEventListener('ended', function () {
-            if (isRepeat) {
-                audio.currentTime = 0;
-                audio.play();
-            } else if (window.currentSongList && window.currentSongIndex < window.currentSongList.length - 1) {
-                window.currentSongIndex++;
-                window.playSongFromList(window.currentSongList, window.currentSongIndex);
-            }
-        });
     });
 
     // Đảm bảo biến và hàm là global
@@ -511,16 +536,14 @@
     if (typeof window.currentSongIndex === 'undefined') window.currentSongIndex = 0;
     window.playSongFromList = function(songList, index) {
         if (!songList || !songList[index]) return;
-        // Nếu có .song-item trên trang, trigger click để đồng bộ mọi thứ
         const allItems = Array.from(document.querySelectorAll('.song-item'));
         if (allItems.length > 0 && allItems[index]) {
             allItems[index].click();
             return;
         }
-        // Nếu không có .song-item (ví dụ ở trang home), fallback về phát nhạc trực tiếp
         const s = songList[index];
         const url = '<%= request.getContextPath() %>/play?file=' + encodeURIComponent(s.filePath);
-        playSong(url, s.title, s.artist, null);
+        playSong(url, s.title, s.artist, s.songID || s.songId);
     };
 </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">

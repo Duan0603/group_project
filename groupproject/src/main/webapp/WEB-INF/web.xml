@@ -30,6 +30,18 @@
         <servlet-name>SignupServlet</servlet-name>
         <url-pattern>/signup</url-pattern>
     </servlet-mapping>
+    <servlet>
+        <servlet-name>LikeServlet</servlet-name>
+        <servlet-class>controller.details.LikeServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LikeServlet</servlet-name>
+        <url-pattern>/details/like</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>LikeServlet</servlet-name>
+        <url-pattern>/details/liked-songs</url-pattern>
+    </servlet-mapping>
 
     <mime-mapping>
         <extension>mp3</extension>
