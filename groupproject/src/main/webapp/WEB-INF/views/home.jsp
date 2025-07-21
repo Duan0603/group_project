@@ -731,11 +731,8 @@
 
 <!-- Main Container -->
 <div class="main-container">
-    <!-- Left Sidebar (from sidebar.jsp) -->
-
+    <!-- Left Sidebar (include sidebar.jsp) -->
     <jsp:include page="/WEB-INF/views/layouts/sidebar.jsp" />
-
-
 
     <!-- Main Content -->
     <main class="main-content">
@@ -856,7 +853,7 @@
                 </button>
                 <div class="carousel-items">
                     <c:forEach var="s" items="${newSongs}">
-                        <div class="card" data-url="${pageContext.request.contextPath}/play?file=${fn:replace(s.filePath, ' ', '%20')}" data-title="${fn:escapeXml(s.title)}" data-artist="${fn:escapeXml(s.artist)}" data-songid="${s.songID}">
+                        <div class="card" data-url="${pageContext.request.contextPath}/play?file=${fn:replace(s.filePath, ' ', '%20')}" data-title="${fn:escapeXml(s.title)}" data-artist="${fn:escapeXml(s.artist)}">
                             <a href="${pageContext.request.contextPath}/songDetail?title=${fn:escapeXml(s.title)}">
                                 <img src="${s.coverImage}" alt="${s.title}">
                             </a>
@@ -872,14 +869,12 @@
                 </div>
             </div>
         </div>
-                    <jsp:include page="/WEB-INF/views/layouts/popup.jsp" />
-
-
     </main>
 
-</div>
+    <jsp:include page="/WEB-INF/views/layouts/player.jsp" />
 
-<jsp:include page="/WEB-INF/views/layouts/player.jsp" />
+</div>
+<jsp:include page="/WEB-INF/views/layouts/popup.jsp" />
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
