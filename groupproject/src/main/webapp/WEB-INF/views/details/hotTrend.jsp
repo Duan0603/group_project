@@ -1,11 +1,12 @@
-<<%@ page language="java" contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ page import="model.Songs" %>
 <%@ page import="java.util.*" %>
 <%@ page import="dao.SongDAO" %>
 <%@ page import="java.net.URLEncoder" %>
+<%@ page import="com.google.gson.Gson" %>
 
+<jsp:include page="/WEB-INF/views/layouts/header.jsp" />
 
 <%
     List<Songs> songs = (List<Songs>) request.getAttribute("songs");
@@ -197,12 +198,10 @@
         </style>
     </head>
     <body>
-        <jsp:include page="/WEB-INF/views/layouts/header.jsp" />
-
         <div class="main-area">
-
-            <jsp:include page="/WEB-INF/views/layouts/sidebar.jsp" />
-        
+            <div class="sidebar-area">
+                <jsp:include page="/WEB-INF/views/layouts/sidebar.jsp" />
+            </div>
             <div class="content-area">
                 <div class="artist-header">
                     <div class="verified"><span>Danh sách phát công khai</span></div>
@@ -224,18 +223,28 @@
                     int h = s.getDuration() / 3600;
                     int m = (s.getDuration() % 3600) / 60;
                     int sec = s.getDuration() % 60;
-                    String encodedPath = URLEncoder.encode((s.getFilePath() != null ? s.getFilePath() : ""), "UTF-8");%>
-                    <div class="song-item" data-song-id="<%= s.getSongID()%>" data-url="<%= request.getContextPath()%>/play?file=<%= encodedPath%>" data-title="<%= s.getTitle()%>" data-artist="<%= s.getArtist() != null ? s.getArtist() : "Không rõ nghệ sĩ"%>" onclick="playSongFromElement(this)">
+                    String encodedPath = URLEncoder.encode((s.getFilePath() != null ? s.getFilePath() : ""), "UTF-8");
+                    String safeTitle = s.getTitle().replace("'", "\\'").replace("\"", "\\\"");
+                    String safeArtist = (s.getArtist() != null ? s.getArtist().replace("'", "\\'").replace("\"", "\\\"") : "Không rõ nghệ sĩ");
+                    String imageFileName = dao.SongDAO.toImageFileName(s.getTitle());
+                    %>
+                    <div class="song-item" 
+                         data-song-id="<%= s.getSongID()%>" 
+                         data-url="<%= request.getContextPath()%>/play?file=<%= encodedPath%>" 
+                         data-title="<%= safeTitle %>"
+                         data-artist="<%= safeArtist %>"
+                         data-image="songImages/<%= imageFileName %>"
+                         onclick="playSong(this)">
                         <div class="left">
                             <span style="width:24px;text-align:right;"><%= i++%></span>
-                            <img src="songImages/<%= dao.SongDAO.toImageFileName(s.getTitle())%>" alt="" onerror="this.onerror=null; this.src='https://via.placeholder.com/48x48/333333/ffffff?text=♪';">
+                            <img src="songImages/<%= imageFileName %>" alt="" onerror="this.onerror=null; this.src='https://via.placeholder.com/48x48/333333/ffffff?text=♪';">
                             <div class="title"><%= s.getTitle()%></div>
                         </div>
                         <div class="genre"><%= s.getGenre() != null ? s.getGenre() : "Chưa xác định"%></div>
-<div class="right">
-    <div class="duration"><%= (h > 0 ? h + ":" : "") + String.format("%02d:%02d", m, sec) %></div>
-    <span class="add-icon" onclick="showPlaylistMenu(event, <%= s.getSongID() %>)">➕</span>
-</div>
+                        <div class="right">
+                            <div class="duration"><%= (h > 0 ? h + ":" : "") + String.format("%02d:%02d", m, sec) %></div>
+                            <span class="add-icon" onclick="showPlaylistMenu(event, <%= s.getSongID() %>)">➕</span>
+                        </div>
                     </div>
                     <% }%>
                 </div>
@@ -243,7 +252,7 @@
         </div>
         <script>
             
-       function showPlaylistMenu(event, songId) {
+function showPlaylistMenu(event, songId) {
     event.stopPropagation();
     const menu = document.getElementById('playlistMenu');
     menu.style.display = 'block';
@@ -258,59 +267,10 @@
     menu.style.left = left + 'px';
     menu.style.top = window.scrollY + btnRect.top + 'px';
 
-    const container = document.getElementById('playlistList');
-    container.innerHTML = '<div style="color:#aaa;font-size:14px;margin-bottom:6px;">Đang tải danh sách...</div>';
-
-    // 🔁 Gọi API playlist đã tạo
-    fetch('<%= request.getContextPath() %>/playlist?action=getUserPlaylists')
-        .then(res => res.json())
-        .then(playlists => {
-            // Tiếp tục gọi API kiểm tra bài hát đã có trong playlist nào
-            return fetch('<%= request.getContextPath() %>/playlist?action=getPlaylistsContainingSong&songId=' + songId)
-                .then(res => res.json())
-                .then(existingPlaylistIds => {
-                    renderSidebarPlaylistsInPopup(songId);
-                    container.innerHTML = '';
-
-                    playlists.forEach(p => {
-                        const item = document.createElement('div');
-                        item.textContent = p.name;
-                        item.style.cursor = 'pointer';
-                        item.style.padding = '6px 0';
-                        item.style.borderBottom = '1px solid #444';
-                        item.style.display = 'flex';
-                        item.style.justifyContent = 'space-between';
-                        item.style.alignItems = 'center';
-
-                        // 👁️ Highlight nếu bài hát đã có trong playlist
-                        const isAdded = existingPlaylistIds.includes(p.playlistID || p.playlistId);
-                        if (isAdded) {
-                            item.style.opacity = '0.5';
-                            item.style.pointerEvents = 'none';
-                            const checkIcon = document.createElement('span');
-                            checkIcon.textContent = '✔️';
-                            checkIcon.style.fontSize = '14px';
-                            checkIcon.style.marginLeft = '6px';
-                            item.appendChild(checkIcon);
-                        } else {
-                            item.onclick = () => {
-                                addSongToPlaylist(p.playlistID || p.playlistId, songId);
-                                menu.style.display = 'none';
-                            };
-                        }
-
-                        container.appendChild(item);
-                    });
-                });
-        })
-        .catch(err => {
-            console.error('Lỗi load playlist:', err);
-            container.innerHTML = '<div style="color:red;">Không thể tải playlist</div>';
-        });
+    renderSidebarPlaylistsInPopup(songId);
 }
-
 function renderSidebarPlaylistsInPopup(songId) {
-    fetch('<%= request.getContextPath() %>/playlist?action=getUserPlaylists')
+    fetch('<%= request.getContextPath() %>/playlistDetail?action=getSidebarPlaylists')
         .then(res => res.json())
         .then(playlists => {
             const container = document.getElementById('sidebarPlaylists');
@@ -337,14 +297,18 @@ function renderSidebarPlaylistsInPopup(songId) {
                 };
                 container.appendChild(div);
             });
+        })
+        .catch(err => {
+            console.error('Lỗi khi load playlists:', err);
+            document.getElementById('sidebarPlaylists').innerHTML = '<div style="color:red;">Ấp khi tải playlists.</div>';
         });
 }
-    function filterPlaylist(keyword) {
-        const items = document.querySelectorAll('#playlistList div');
-        items.forEach(item => {
-            item.style.display = item.textContent.toLowerCase().includes(keyword.toLowerCase()) ? 'block' : 'none';
-        });
-    }
+function filterPlaylist(keyword) {
+    const items = document.querySelectorAll('#sidebarPlaylists div');
+    items.forEach(item => {
+        item.style.display = item.textContent.toLowerCase().includes(keyword.toLowerCase()) ? 'block' : 'none';
+    });
+}
 
 function createNewPlaylistFromInput() {
     const name = document.getElementById('newPlaylistName').value.trim();
@@ -378,59 +342,55 @@ function createNewPlaylistFromInput() {
     });
 }
 
-    function addSongToPlaylist(playlistId, songId) {
-        fetch('<%= request.getContextPath() %>/playlist', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({
-                action: 'addSongToPlaylist',
-                playlistId: playlistId,
-                songId: songId
-            })
-        }).then(res => res.json())
-        .then(result => {
-            if (result.success) {
-                alert("🎵 Đã thêm bài hát vào playlist!");
-            } else {
-                alert("🚫 Lỗi khi thêm bài hát.");
-            }
-        }).catch(err => {
-            console.error('Lỗi khi thêm:', err);
-        });
-    }
+function addSongToPlaylist(playlistId, songId) {
+    fetch('<%= request.getContextPath() %>/playlist', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+            action: 'addSongToPlaylist',
+            playlistId: playlistId,
+            songId: songId
+        })
+    }).then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            alert("🎵 Đã thêm bài hát vào playlist!");
+        } else {
+            alert("🚫 Lỗi khi thêm bài hát.");
+        }
+    }).catch(err => {
+        console.error('Lỗi khi thêm:', err);
+    });
+}
+
 
     // Tắt popup nếu click ra ngoài
-    document.addEventListener('click', function (e) {
-        const menu = document.getElementById('playlistMenu');
-        if (menu && !menu.contains(e.target)) {
-            menu.style.display = 'none';
-        }
-    });
+document.addEventListener('click', function (e) {
+    const menu = document.getElementById('playlistMenu');
+    if (menu && !menu.contains(e.target) && !e.target.matches('.add-icon')) {
+        menu.style.display = 'none';
+    }
+});
             let currentPlayingUrl = "";
-            
-            function playSongFromElement(element) {
-                const audioUrl = element.dataset.url;
-                const title = element.dataset.title;
-                const artist = element.dataset.artist;
-                const songId = element.dataset.songId;
-                
-                playSong(audioUrl, title, artist, songId);
-            }
-            
             function playFirstSong() {
                 const firstSongPath = '<%= encodedFirstSongPath%>';
-                const title = '<%= songToPlay != null ? songToPlay.getTitle().replace("'", "\\'") : "Không có bài hát"%>';
-                const artist = '<%= songToPlay != null && songToPlay.getArtist() != null ? songToPlay.getArtist().replace("'", "\\'") : "Không rõ nghệ sĩ"%>';
+                const title = '<%= songToPlay != null ? songToPlay.getTitle().replace("\'", "\\\\'") : "Không có bài hát"%>';
+                const artist = '<%= songToPlay != null && songToPlay.getArtist() != null ? songToPlay.getArtist().replace("\'", "\\\\'") : "Không rõ nghệ sĩ"%>';
                 const image = '<%= firstSongImage%>';
                 if (firstSongPath) {
                     currentPlayingUrl = '<%= request.getContextPath()%>/play?file=' + firstSongPath;
-                    playSong(currentPlayingUrl, title, artist, image, document.querySelector('.song-item'));
+                    playSong(document.querySelector('.song-item')); // Pass the first song item
                 }
             }
             function toggleCreatePlaylist() {
                 alert("👉 Mở popup tạo playlist ở đây nha bro 😎 (Chưa code phần modal)");
             }
-            function playSong(audioUrl, title, artist, songId = null, imageUrl = null, element = null) {
+            function playSong(element) {
+                const audioUrl = element.dataset.url;
+                const title = element.dataset.title;
+                const artist = element.dataset.artist;
+                const imageUrl = element.dataset.image;
+
                 const audio = document.getElementById('audioPlayer');
                 const titleElem = document.getElementById('mediaTitle');
                 const artistElem = document.getElementById('mediaArtist');
@@ -442,16 +402,7 @@ function createNewPlaylistFromInput() {
                 audio.play();
                 titleElem.textContent = title;
                 artistElem.textContent = artist;
-                
-                // Xử lý ảnh thumbnail
-                if (imageUrl) {
-                    thumbnail.src = imageUrl;
-                } else {
-                    // Tạo tên file ảnh từ title
-                    const imgName = toImageFileName(title);
-                    thumbnail.src = contextPath + '/songImages/' + imgName;
-                }
-                
+                thumbnail.src = imageUrl;
                 thumbnail.onerror = () => {
                     thumbnail.src = 'https://via.placeholder.com/60x60/333333/ffffff?text=♪';
                 };
@@ -462,34 +413,16 @@ function createNewPlaylistFromInput() {
 
                 // Cập nhật ảnh header
                 const headerImage = document.getElementById('firstSongImage');
-                if (headerImage && thumbnail.src) {
-                    headerImage.src = thumbnail.src;
+                if (headerImage && imageUrl) {
+                    headerImage.src = imageUrl;
                 }
 
                 // Gửi yêu cầu lưu lịch sử nghe
-                if (songId) {
-                    fetch(`${window.location.origin}${contextPath}/listening?songId=${songId}`)
-                        .then(response => {
-                            if (response.ok) {
-                                console.log('✅ Đã cập nhật lịch sử nghe nhạc cho songId:', songId);
-                            } else {
-                                console.log('❌ Lỗi khi cập nhật lịch sử nghe nhạc');
+                if (element && element.dataset && element.dataset.songId) {
+                    fetch(`${window.location.origin}${contextPath}/listening?songId=${element.dataset.songId}`)
+                                        .catch(err => console.error("Lỗi khi lưu lịch sử:", err));
                             }
-                        })
-                        .catch(err => console.error("❌ Lỗi khi lưu lịch sử:", err));
-                }
-            }
-
-            function toImageFileName(title) {
-                if (!title) return 'default.jpg';
-                const normalized = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
-                const words = normalized.split(/[^a-zA-Z0-9]+/);
-                let pascalCase = "";
-                for (let word of words) {
-                    if (word) pascalCase += word[0].toUpperCase() + word.slice(1);
-                }
-                return pascalCase + ".jpg";
-            }
+                        }
                         function highlightCurrentSong() {
                             const items = document.querySelectorAll('.song-item');
                             items.forEach(item => {
@@ -499,26 +432,131 @@ function createNewPlaylistFromInput() {
                             });
                         }
                         
+
+               
+
+// Hàm để set queue khi trang load
+function setQueueFromCurrentPage() {
+    const songListFromServer = JSON.parse('<%= new Gson().toJson(songs) %>');
+
+    console.log('Songs from server:', songListFromServer.length);
+
+    if (songListFromServer.length > 0) {
+        // Fix JSON trước khi gửi
+        const cleanSongList = songListFromServer.map(song => ({
+            songID: song.songID,
+            title: song.title,
+            artist: song.artist,
+            filePath: song.filePath,
+            duration: song.duration,
+            genre: song.genre
+        }));
+
+        const requestData = {
+            action: 'setQueue',
+            songList: JSON.stringify(cleanSongList),
+            startIndex: 0
+        };
+
+        console.log('Sending queue data:', requestData);
+
+        fetch('<%= request.getContextPath() %>/queue', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                console.log('✅ Queue đã được set thành công:', data.message);
+                fetchUpNextSongs();
+            } else {
+                console.error('❌ Lỗi khi set queue:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Lỗi khi gửi request set queue:', error);
+        });
+    } else {
+        console.log('Không có bài hát nào để set queue');
+    }
+}
+
+function fetchUpNextSongs() {
+    fetch('<%= request.getContextPath() %>/queue?action=getCurrentQueue')
+        .then(res => res.json())
+        .then(data => {
+            const upNextList = document.getElementById('upNextList');
+            if (!upNextList) return;
+            
+            upNextList.innerHTML = ''; // clear cũ
+
+            if (!data.queue || data.queue.length === 0) {
+                upNextList.innerHTML = '<p style="color:gray">Không có bài hát trong queue.</p>';
+                return;
+            }
+
+            // Hiển thị tất cả bài hát trong queue
+            data.queue.forEach(song => {
+                const item = document.createElement('div');
+                item.className = 'queue-item media-info';
+                item.innerHTML = `
+                    <img src="<%= request.getContextPath() %>/songImages/${song.title.replaceAll(' ', '_')}.jpg" alt="Ảnh" class="media-thumbnail" onerror="this.src='https://via.placeholder.com/60x60/333333/ffffff?text=♪'" />
+                    <div class="media-details">
+                        <h3>${song.title}</h3>
+                        <p>${song.artist}</p>
+                    </div>
+                `;
+                upNextList.appendChild(item);
+            });
+        })
+        .catch(err => {
+            console.error('Lỗi khi lấy danh sách tiếp theo:', err);
+            const upNextList = document.getElementById('upNextList');
+            if (upNextList) {
+                upNextList.innerHTML = '<p style="color:red">Lỗi khi tải queue.</p>';
+            }
+        });
+}
+
+// Gọi ngay khi DOM load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM loaded, đang set queue...');
+    console.log('Songs từ server:', <%= (songs != null ? songs.size() : 0) %>);
+    setQueueFromCurrentPage();
+});
+
+// Tạo biến global để test
+window.testQueue = function() {
+    console.log('Testing queue...');
+    setQueueFromCurrentPage();
+};
+
+// Nếu muốn cập nhật mỗi lần phát bài mới, gọi lại fetchUpNextSongs()
+
         </script>
         <jsp:include page="/WEB-INF/views/layouts/player.jsp" />
 <div id="playlistMenu" class="playlist-popup" style="display:none;">
     <div class="playlist-header">🎶 Chọn playlist để thêm bài hát</div>
 
-    <!-- Thanh tìm kiếm playlist -->
-    <input type="text" id="searchPlaylistInput" placeholder="🔍 Tìm playlist..." 
+    <!-- Remove the search input -->
+    <!-- <input type="text" id="searchPlaylistInput" placeholder="🔍 Tìm playlist..." 
            oninput="filterPlaylist(this.value)" 
-           class="playlist-search" />
+           class="playlist-search" /> -->
 
-    <!-- Danh sách các playlist -->
-    <div id="playlistList" style="max-height: 150px; overflow-y: auto; margin-bottom: 12px;"></div>
-
-<!-- Thêm vào playlist -->
-<div style="border-top: 1px solid #444; padding-top: 8px;">
-    <div style="color: #aaa; margin-bottom: 6px;">➕ Thêm vào playlist đã tạo</div>
-    <div id="sidebarPlaylists" style="max-height: 140px; overflow-y: auto;">
-        <!-- Playlist user sẽ được render tại đây bằng JS -->
+    <!-- Thêm vào playlist -->
+    <div style="border-top: 1px solid #444; padding-top: 8px;">
+        <div style="color: #aaa; margin-bottom: 6px;">➕ Thêm vào playlist đã tạo</div>
+        <div id="sidebarPlaylists" style="max-height: 140px; overflow-y: auto;">
+        </div>
     </div>
 </div>
-</div>
+
     </body>
 </html>
