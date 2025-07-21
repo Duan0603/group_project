@@ -35,6 +35,8 @@ public class PayOSReturnServlet extends HttpServlet {
             session.setAttribute("user", user);
             userDAO.setPremiumAndDate(user.getUserId(), true);
             orderDAO.createOrder(user.getUserId(), 20000, "Nâng cấp tài khoản Premium qua PayOS");
+            // Load lại danh sách order mới nhất vào session (nếu cần)
+            session.setAttribute("orderList", orderDAO.getAllOrders());
             response.sendRedirect(request.getContextPath() + "/home?premium=success");
             return;
         } else {

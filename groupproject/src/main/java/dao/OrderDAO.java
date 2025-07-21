@@ -74,19 +74,36 @@ public class OrderDAO extends DBContext {
      * @param userId ID của người dùng thực hiện.
      * @param amount Số tiền của đơn hàng.
      * @param description Mô tả về đơn hàng.
-     * @return true nếu tạo thành công.
+     * @return Order vừa tạo (bao gồm orderDate), hoặc null nếu thất bại.
      */
-    public boolean createOrder(int userId, double amount, String description) {
-        String sql = "INSERT INTO Orders (UserID, Amount, Description) VALUES (?, ?, ?)";
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
+    public Order createOrder(int userId, double amount, String description) {
+        String sql = "INSERT INTO Orders (UserID, Amount, Description, OrderDate) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             st.setInt(1, userId);
             st.setDouble(2, amount);
             st.setString(3, description);
-            return st.executeUpdate() > 0;
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            st.setTimestamp(4, now);
+            int affected = st.executeUpdate();
+            if (affected > 0) {
+                try (ResultSet rs = st.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        int orderId = rs.getInt(1);
+                        Order order = new Order();
+                        order.setOrderId(orderId);
+                        order.setUserId(userId);
+                        order.setOrderDate(now);
+                        order.setAmount(amount);
+                        order.setDescription(description);
+                        // Có thể lấy username nếu cần
+                        return order;
+                    }
+                }
+            }
         } catch (SQLException e) {
             System.out.println("Create order error: " + e.getMessage());
-            return false;
         }
+        return null;
     }
 
     /**

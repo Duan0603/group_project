@@ -94,6 +94,7 @@ public class UserManagementServlet extends HttpServlet {
         
         if (success && !currentPremiumStatus) {
             orderDAO.createOrder(userId, 20000, "Nâng cấp tài khoản Premium");
+            request.getSession().setAttribute("orderList", orderDAO.getAllOrders());
         }
         
         response.sendRedirect(request.getContextPath() + "/admin#accounts");
