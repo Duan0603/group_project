@@ -24,6 +24,15 @@ FacebookID VARCHAR(100),
                        PremiumDate DATETIME NULL
 );
 
+CREATE TABLE Orders (
+    OrderID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT FOREIGN KEY REFERENCES Users(UserID),
+    OrderDate DATETIME DEFAULT GETDATE(),
+    Amount DECIMAL(10, 2) NOT NULL,
+    Description NVARCHAR(255)
+);
+GO
+
 -- Artists table (extends Users)
 CREATE TABLE Artists (
                          artistId INT PRIMARY KEY,
