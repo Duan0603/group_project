@@ -146,13 +146,8 @@
     <div class="d-flex w-100 align-items-center justify-content-between gap-3 flex-wrap">
 
         <!-- Logo -->
-        <c:if test="${user != null && !user.premium}">
-                <li class="nav-item" style="list-style: none; margin: 0; padding: 0;">
-                    <form action="payos-premium" method="get" style="display:inline;">
-                        <button type="submit" class="btn" style="margin-left: 10px; background-color: #e84393; color: #fff; font-weight: bold; border: none;">Premium</button>
-                    </form>
-                </li>
-        </c:if>
+                <a class="navbar-brand mb-2 mb-lg-0" href="${pageContext.request.contextPath}/home">Pinkify</a>
+
         
         <!-- Search bar -->
         <div class="custom-search-bar flex-grow-1 mx-2" style="min-width: 250px;">
@@ -185,6 +180,9 @@
 
             <c:choose>
                <c:when test="${user != null}">
+                   <a class="nav-link" href="${pageContext.request.contextPath}/details/liked-songs?action=likedSongs">
+                        <i class="fas fa-heart" style="color:#e84393;"></i> Bài hát đã thích
+                    </a>
                     <button class="icon-btn" title="Thông báo">
                         <i class="fas fa-bell"></i>
                     </button>

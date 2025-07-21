@@ -732,65 +732,10 @@
 <!-- Main Container -->
 <div class="main-container">
     <!-- Left Sidebar (from sidebar.jsp) -->
-    <aside class="left-sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="left">
-                <button onclick="toggleSidebar()" title="Thu gọn Thư viện">
-                    <i class="fas fa-angle-double-left"></i>
-                </button>
-                <span>Thư viện</span>
-            </div>
-            <div class="right">
-                <button class="create-button" onclick="openCreatePlaylistModal()">
-                    <i class="fas fa-plus"></i> Tạo
-                </button>
-                <button class="expand-button" title="Phóng to giao diện">
-                    <i class="fas fa-expand"></i>
-                </button>
-            </div>
-        </div>
 
-        <div class="toolbar">
-            <input type="text" placeholder="Tìm kiếm..." />
-            <div class="sort-dropdown">
-                <button onclick="toggleSortOptions()">Sắp xếp theo</button>
-                <div class="sort-options" id="sortOptions">
-                    <button class="active">Gần đây ✓</button>
-                    <button>Mới thêm gần đây</button>
-                    <button>Thứ tự chữ cái</button>
-                    <button>Người sáng tạo</button>
-                </div>
-            </div>
-        </div>
+    <jsp:include page="/WEB-INF/views/layouts/sidebar.jsp" />
 
-        <div class="view-modes">
-            <button class="active" onclick="setViewMode('list')">Danh sách</button>
-            <button onclick="setViewMode('grid')">Lưới</button>
-        </div>
 
-        <!-- Listening History Section -->
-        <c:if test="${not empty listeningHistory}">
-            <div class="library-section" id="librarySection">
-                <h4 style="margin-left: 16px;">🕘 Đã nghe gần đây</h4>
-                <c:forEach var="his" items="${listeningHistory}">
-                    <div class="library-item"
-                         onclick="playSong(
-                                 '${pageContext.request.contextPath}/play?file=${his.song.filePath}',
-                                 '${his.song.title}',
-                                 '${his.song.artist}',
-                                 '${his.song.songID ? his.song.songID : ''}',
-                                 this)">
-                        <img src="${pageContext.request.contextPath}/songImages/${his.song.title}.jpg"
-                             onerror="this.src='https://via.placeholder.com/48x48/333333/ffffff?text=♪'" alt="cover"/>
-                        <div class="library-item-info">
-                            <div class="library-item-title">${his.song.title}</div>
-                            <div class="library-item-subtitle">${his.song.artist}</div>
-                        </div>
-                    </div>
-                </c:forEach>
-            </div>
-        </c:if>
-    </aside>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -927,6 +872,9 @@
                 </div>
             </div>
         </div>
+                    <jsp:include page="/WEB-INF/views/layouts/popup.jsp" />
+
+
     </main>
 
 </div>
