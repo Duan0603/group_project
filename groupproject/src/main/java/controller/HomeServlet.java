@@ -1,7 +1,6 @@
 package controller;
 
 import dao.FavoriteDAO;
-import dao.ListeningHistoryDAO;
 import dao.PlaylistDAO;
 import dao.SongDAO;
 import jakarta.servlet.ServletException;
@@ -11,11 +10,11 @@ import model.Songs;
 import model.User;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
 
 @WebServlet(name = "HomeServlet", urlPatterns = {"/home"})
 public class HomeServlet extends HttpServlet {
+
     private SongDAO songDAO;
     private FavoriteDAO favoriteDAO;
 
@@ -53,22 +52,15 @@ public class HomeServlet extends HttpServlet {
             // Dữ liệu cho người dùng đã đăng nhập
             if (user != null) {
                 request.setAttribute("recommended", songDAO.getRecommendedSongs(user.getUserId()));
-                request.setAttribute("recentSongs", songDAO.getRecentlyPlayedSongs(user.getUserId()));
-                request.setAttribute("recentArtists", songDAO.getRecentArtists(user.getUserId()));
                 request.setAttribute("favorites", favoriteDAO.getFavoriteSongs(user.getUserId()));
                 // Cập nhật favoriteSongIds
                 Set<Integer> favoriteSongIds = favoriteDAO.getFavoriteSongIdsByUser(user.getUserId());
                 session.setAttribute("favoriteSongIds", favoriteSongIds);
-                
-                                // Bổ sung truyền danh sách playlist của user cho sidebar
+
+                // Bổ sung truyền danh sách playlist của user cho sidebar
                 PlaylistDAO playlistDAO = new PlaylistDAO();
                 request.setAttribute("userPlaylists", playlistDAO.getPlaylistsByUser(user.getUserId()));
-ListeningHistoryDAO historyDAO = new ListeningHistoryDAO();
-List<Songs> historyList = historyDAO.getRecentHistory(user.getUserId(), 5);
-request.setAttribute("listeningHistory", historyList);
-                
             }
-
             request.getRequestDispatcher("/WEB-INF/views/home.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();
