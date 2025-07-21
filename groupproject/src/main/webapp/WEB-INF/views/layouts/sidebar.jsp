@@ -281,7 +281,6 @@ onerror="this.src='https://via.placeholder.com/48x48/333333/ffffff?text=♪'" al
 <!-- Danh sách playlist -->
 <div class="library-section" id="userPlaylistsSidebar">
 <h4 style="margin-left: 16px;">🎵 Playlist của bạn</h4>
-</c:forEach>
                 <c:forEach var="playlist" items="${userPlaylists}">
                     <a href="playlistDetail?playlistId=${playlist.playlistID}">
                         ${playlist.name}
