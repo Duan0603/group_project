@@ -189,7 +189,7 @@ String firstSongImage = "https://via.placeholder.com/60x60/333333/ffffff?text=�
                 <div class="genre"><%= s.getGenre() != null ? s.getGenre() : "Chưa xác định" %></div>
                 <div class="right">
                     <div class="duration"><%= (h > 0 ? h + ":" : "") + String.format("%02d:%02d", m, sec) %></div>
-                    <span class="add-icon">➕</span>
+                    <span class="add-icon" onclick="showPlaylistMenu(event, <%= s.getSongID() %>)">➕</span>
                 </div>
             </div>
         <%
@@ -337,3 +337,102 @@ function playAndSaveHistory(filePath, title, artist, songId) {
         console.error("Lỗi khi gửi lịch sử nghe:", err);
     });
 }
+
+// ==== Playlist Popup Logic (copied/adapted from hotTrend.jsp) ====
+function showPlaylistMenu(event, songId) {
+    event.stopPropagation();
+    const menu = document.getElementById('playlistMenu');
+    menu.style.display = 'block';
+    menu.dataset.songId = songId;
+
+    const btnRect = event.target.getBoundingClientRect();
+    const popupWidth = 260;
+    const margin = 12;
+    let left = btnRect.left - popupWidth - margin;
+    if (left < 0) left = margin;
+
+    menu.style.left = left + 'px';
+    menu.style.top = window.scrollY + btnRect.top + 'px';
+
+    renderSidebarPlaylistsInPopup(songId);
+}
+function renderSidebarPlaylistsInPopup(songId) {
+    fetch('<%= request.getContextPath() %>/playlistDetail?action=getSidebarPlaylists')
+        .then(res => res.json())
+        .then(playlists => {
+            const container = document.getElementById('sidebarPlaylists');
+            container.innerHTML = '';
+
+            if (!playlists || playlists.length === 0) {
+                container.innerHTML = '<div style="color:#777;">Không có playlist nào.</div>';
+                return;
+            }
+
+            playlists.forEach(p => {
+                const div = document.createElement('div');
+                div.textContent = p.name;
+                div.style.padding = '6px';
+                div.style.cursor = 'pointer';
+                div.style.borderRadius = '4px';
+                div.style.transition = '0.2s';
+                div.style.color = '#fff';
+                div.onmouseenter = () => div.style.background = '#333';
+                div.onmouseleave = () => div.style.background = 'transparent';
+                div.onclick = () => {
+                    addSongToPlaylist(p.playlistId || p.playlistID, songId);
+                    document.getElementById('playlistMenu').style.display = 'none';
+                };
+                container.appendChild(div);
+            });
+        })
+        .catch(err => {
+            console.error('Lỗi khi load playlists:', err);
+            document.getElementById('sidebarPlaylists').innerHTML = '<div style="color:red;">Ấp khi tải playlists.</div>';
+        });
+}
+function filterPlaylist(keyword) {
+    const items = document.querySelectorAll('#sidebarPlaylists div');
+    items.forEach(item => {
+        item.style.display = item.textContent.toLowerCase().includes(keyword.toLowerCase()) ? 'block' : 'none';
+    });
+}
+function addSongToPlaylist(playlistId, songId) {
+    fetch('<%= request.getContextPath() %>/playlist', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+            action: 'addSongToPlaylist',
+            playlistId: playlistId,
+            songId: songId
+        })
+    }).then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            alert('🎵 Đã thêm bài hát vào playlist!');
+        } else {
+            alert('🚫 Lỗi khi thêm bài hát.');
+        }
+    }).catch(err => {
+        console.error('Lỗi khi thêm:', err);
+    });
+}
+document.addEventListener('click', function (e) {
+    const menu = document.getElementById('playlistMenu');
+    if (menu && !menu.contains(e.target) && !e.target.matches('.add-icon')) {
+        menu.style.display = 'none';
+    }
+});
+</script>
+
+<!-- Playlist Popup HTML -->
+<div id="playlistMenu" class="playlist-popup" style="display:none; position:absolute; z-index:9999; background:#2c2c2c; border-radius:10px; padding:12px; box-shadow:0 4px 16px rgba(0,0,0,0.5); width:260px;">
+    <div class="playlist-header">🎶 Chọn playlist để thêm bài hát</div>
+    <!-- Remove the search input -->
+    <!-- <input type="text" id="searchPlaylistInput" placeholder="🔍 Tìm playlist..." 
+           oninput="filterPlaylist(this.value)" 
+           class="playlist-search" /> -->
+    <div style="border-top: 1px solid #444; padding-top: 8px;">
+        <div style="color: #aaa; margin-bottom: 6px;">➕ Thêm vào playlist đã tạo</div>
+        <div id="sidebarPlaylists" style="max-height: 140px; overflow-y: auto;"></div>
+    </div>
+</div>
