@@ -4,6 +4,7 @@ import model.Playlist;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import dao.SongDAO;
 
 public class PlaylistDAO {
     private final Connection conn;
@@ -104,6 +105,19 @@ public List<Playlist> getPlaylistsByUser(int userID) {
                 rs.getBoolean("IsPublic"),
                 rs.getBoolean("Status")
             );
+            // Lấy ảnh bài hát đầu tiên trong playlist
+            String imgSql = "SELECT TOP 1 s.CoverImage FROM Songs s JOIN PlaylistSongs ps ON s.SongID = ps.SongID WHERE ps.PlaylistID = ? ORDER BY ps.AddedAt ASC";
+            try (PreparedStatement imgStmt = conn.prepareStatement(imgSql)) {
+                imgStmt.setInt(1, playlist.getPlaylistID());
+                ResultSet imgRs = imgStmt.executeQuery();
+                if (imgRs.next()) {
+                    playlist.setFirstSongImage(imgRs.getString("CoverImage"));
+                } else {
+                    playlist.setFirstSongImage("default.jpg");
+                }
+            } catch (Exception e) {
+                playlist.setFirstSongImage("default.jpg");
+            }
             playlists.add(playlist);
         }
     } catch (SQLException e) {

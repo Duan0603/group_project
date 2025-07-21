@@ -11,6 +11,7 @@ import model.Songs;
 import model.User;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 @WebServlet(name = "HomeServlet", urlPatterns = {"/home"})
@@ -58,11 +59,14 @@ public class HomeServlet extends HttpServlet {
                 // Cập nhật favoriteSongIds
                 Set<Integer> favoriteSongIds = favoriteDAO.getFavoriteSongIdsByUser(user.getUserId());
                 session.setAttribute("favoriteSongIds", favoriteSongIds);
-                ListeningHistoryDAO historyDAO = new ListeningHistoryDAO();
-                request.setAttribute("listeningHistory", historyDAO.getHistoryByUser(user.getUserId()));
-                // Bổ sung truyền danh sách playlist của user cho sidebar
+                
+                                // Bổ sung truyền danh sách playlist của user cho sidebar
                 PlaylistDAO playlistDAO = new PlaylistDAO();
                 request.setAttribute("userPlaylists", playlistDAO.getPlaylistsByUser(user.getUserId()));
+ListeningHistoryDAO historyDAO = new ListeningHistoryDAO();
+List<Songs> historyList = historyDAO.getRecentHistory(user.getUserId(), 5);
+request.setAttribute("listeningHistory", historyList);
+                
             }
 
             request.getRequestDispatcher("/WEB-INF/views/home.jsp").forward(request, response);

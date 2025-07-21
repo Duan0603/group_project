@@ -41,8 +41,8 @@
             }
 
             html, body {
-                height: 100vh;
-                overflow: hidden;
+                height: 100%;
+                min-height: 100%;
             }
 
             body {
@@ -51,12 +51,15 @@
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 display: flex;
                 flex-direction: column;
+                padding-bottom: 0 !important;
             }
            
             /* Main Layout Container */
             .main-container {
                 display: flex;
-                flex: 1;
+                flex: 1 1 auto;
+                min-height: 0;
+                height: 100vh;
                 overflow: hidden;
             }
 
@@ -275,6 +278,7 @@
                 background: #000; /* Black background */
                 overflow-y: auto;
                 position: relative;
+                padding-bottom: 0 !important;
             }
 
             .content-body {
@@ -989,7 +993,7 @@
                 panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
             }
 
-            function playSong(audioUrl, title, artist) {
+            function playSong(audioUrl, title, artist, songId = null) {
                 const audio = document.getElementById('audioPlayer');
                 const titleEl = document.getElementById('mediaTitle');
                 const artistEl = document.getElementById('mediaArtist');
@@ -1009,7 +1013,11 @@
                 thumbnailEl.onerror = () => {
                     thumbnailEl.src = '<%= request.getContextPath() %>/songImages/default.jpg';
                 };
+
+                // TODO: Update listening history if needed
             }
+
+            // TODO: Implement listening history update function
 
             function toImageFileName(title) {
                 if (!title) return 'default.jpg';

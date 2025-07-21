@@ -15,7 +15,6 @@ public class UserDAO extends DBContext {
             st.setString(1, usernameOrEmail);
             st.setString(2, usernameOrEmail);
             st.setString(3, password);
-
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
                 return extractUser(rs);
@@ -26,7 +25,7 @@ public class UserDAO extends DBContext {
         return null;
     }
 
-    public boolean register(User user) {
+        public boolean register(User user) {
         String sql = "INSERT INTO Users (Username, Password, Email, Role, Status, Provider, GoogleID, FacebookID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, user.getUsername());
@@ -83,8 +82,6 @@ public class UserDAO extends DBContext {
         user.setProvider(rs.getString("Provider"));
         user.setGoogleID(rs.getString("GoogleID"));
         user.setFacebookID(rs.getString("FacebookID"));
-        user.setPremium(rs.getBoolean("Premium"));
-        user.setPremiumDate(rs.getTimestamp("PremiumDate"));
         return user;
     }
 
@@ -160,6 +157,18 @@ public class UserDAO extends DBContext {
             System.out.println("Update reset token error: " + e.getMessage());
         }
     }
+    
+    public void updateProvider(String email, String newProvider) {
+    String sql = "UPDATE Users SET Provider = ? WHERE Email = ?";
+    try (PreparedStatement st = connection.prepareStatement(sql)) {
+        st.setString(1, newProvider);
+        st.setString(2, email);
+        st.executeUpdate();
+        System.out.println("Provider updated to: " + newProvider);
+    } catch (SQLException e) {
+        System.out.println("Update provider error: " + e.getMessage());
+    }
+}
 
     public void setPremiumAndDate(int userId, boolean premium) {
         String sql = "UPDATE Users SET Premium = ?, PremiumDate = GETDATE() WHERE UserID = ?";

@@ -8,34 +8,51 @@ import dao.SongDAO;
 
 import java.io.IOException;
 import java.util.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-@WebServlet("/add-to-queue")
+@WebServlet("/queue")
 public class QueueServlet extends HttpServlet {
-    private final SongDAO songDAO = new SongDAO();
-
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+        
+        String action = request.getParameter("action");
 
-        String title = request.getParameter("title");
-        Songs song = songDAO.getSongByTitle(title);
-
-        if (song != null) {
-            HttpSession session = request.getSession();
-            List<Songs> queue = (List<Songs>) session.getAttribute("queueList");
-
-            if (queue == null) {
-                queue = new ArrayList<>();
-            }
-
-            queue.add(song);
-            session.setAttribute("queueList", queue);
-
-            response.setStatus(200);
-            response.getWriter().write("Added to queue");
-        } else {
-            response.setStatus(404);
-            response.getWriter().write("Song not found");
+        // Tránh null gây lỗi
+        if (action == null || !action.equals("getCurrentQueue")) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.getWriter().write("{\"error\": \"Invalid or missing action\"}");
+            return;
         }
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("queue") == null) {
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{\"queue\": []}");
+            return;
+        }
+
+        List<Songs> queue = (List<Songs>) session.getAttribute("queue");
+        JSONArray jsonArray = new JSONArray();
+
+        for (Songs song : queue) {
+            if (song == null) continue; // tránh null gây lỗi JSON
+
+            JSONObject obj = new JSONObject();
+            obj.put("title", song.getTitle());
+            obj.put("artist", song.getArtist());
+            obj.put("filePath", song.getFilePath());
+            obj.put("songId", song.getSongID());
+            jsonArray.put(obj);
+        }
+
+        JSONObject responseJson = new JSONObject();
+        responseJson.put("queue", jsonArray);
+
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8"); // 👈 tránh lỗi ký tự đặc biệt
+        response.getWriter().write(responseJson.toString());
     }
 }

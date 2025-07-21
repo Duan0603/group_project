@@ -176,12 +176,11 @@ String firstSongImage = "https://via.placeholder.com/60x60/333333/ffffff?text=�
         %>
             <div class="song-item"
      data-url="<%= request.getContextPath() %>/play?file=<%= URLEncoder.encode(s.getFilePath(), "UTF-8") %>&songId=<%= s.getSongID() %>"
-     onclick="playSong(
+     onclick="playAndSaveHistory(
          '<%= request.getContextPath() %>/play?file=<%= URLEncoder.encode(s.getFilePath(), "UTF-8") %>&songId=<%= s.getSongID() %>',
          '<%= s.getTitle().replace("'", "\\'") %>',
          '<%= s.getArtist() != null ? s.getArtist().replace("'", "\\'") : "Không rõ nghệ sĩ" %>',
-         'songImages/<%= dao.SongDAO.toImageFileName(s.getTitle()) %>',
-         this)">
+         <%= s.getSongID() %>)">
                 <div class="left">
                     <span style="width:24px;text-align:right;"><%= i++ %></span>
                     <img src="songImages/<%= dao.SongDAO.toImageFileName(s.getTitle()) %>" alt="cover">
@@ -305,8 +304,36 @@ audio.addEventListener('ended', () => {
         allSongs[currentIndex + 1].click();
     }
 });
-</script>
 
-<jsp:include page="/WEB-INF/views/layouts/player.jsp" />
-</body>
-</html>
+function playAndSaveHistory(filePath, title, artist, songId) {
+    playSong(filePath, title, artist, songId);
+
+    // Cập nhật UI ngay lập tức
+    addToListeningHistoryUI({
+        songID: songId,
+        title,
+        artist,
+        thumbnail: toImageFileName(title)
+    });
+
+    // Gửi API lưu vào server
+    fetch(contextPath + "/listening-history", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+            songId: songId
+        }),
+        credentials: "include"
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            console.error("Không thể lưu lịch sử nghe:", data.error);
+        }
+    })
+    .catch(err => {
+        console.error("Lỗi khi gửi lịch sử nghe:", err);
+    });
+}

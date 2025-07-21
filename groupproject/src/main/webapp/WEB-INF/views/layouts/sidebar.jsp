@@ -6,6 +6,7 @@
         <meta charset="UTF-8">
         <title>Thư viện người dùng</title>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/library.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
         <style>
             :root {
                 --header-height: 70px;
@@ -201,6 +202,7 @@
             .library-section.view-grid .library-item-info {
                 margin-top: 8px;
             }
+
             @media screen and (max-width: 768px) {
                 .left-sidebar {
                     width: 100vw !important;
@@ -255,135 +257,300 @@
                 <button class="active" onclick="setViewMode('list')">Danh sách</button>
             </div>
 
-            <!-- Listening History Section -->
-            <c:if test="${not empty listeningHistory}">
-                <div class="library-section" id="librarySection">
-                    <h4 style="margin-left: 16px;">🕘 Đã nghe gần đây</h4>
-                    <c:forEach var="his" items="${listeningHistory}">
-                        <div class="library-item"
-                             onclick="playSong(
-                                     '${pageContext.request.contextPath}/play?file=${his.song.filePath}',
-                                                     '${his.song.title}',
-                                                     '${his.song.artist}',
-                                                     '${pageContext.request.contextPath}/songImages/${his.song.title}.jpg',
-                                                     this)">
-                            <img src="${pageContext.request.contextPath}/songImages/${his.song.title}.jpg"
-                                 onerror="this.src='https://via.placeholder.com/48x48/333333/ffffff?text=♪'" alt="cover"/>
-                            <div class="library-item-info">
-                                <div class="library-item-title">${his.song.title}</div>
-                                <div class="library-item-subtitle">${his.song.artist}</div>
-                            </div>
-                        </div>
-                    </c:forEach>
-                </div>
-            </c:if>
+
+            <div class="library-section" id="recentListening">
+                <h4 style="margin-left: 16px;">🕒 Gần đây đã nghe</h4>
+                <!-- Lịch sử sẽ render bằng JavaScript tại đây -->
+            </div>
+
 
             <!-- Danh sách playlist -->
             <div class="library-section" id="userPlaylistsSidebar">
                 <h4 style="margin-left: 16px;">🎵 Playlist của bạn</h4>
                 <c:forEach var="playlist" items="${userPlaylists}">
-                    <a href="playlistDetail?playlistId=${playlist.playlistID}">
-                        ${playlist.name}
+                    <a href="playlistDetail?playlistId=${playlist.playlistID}" class="library-item">
+                        <div class="library-item-info">
+                            <div class="library-item-title">${playlist.name}</div>
+                            <div class="library-item-subtitle">${playlist.description != null ? playlist.description : 'Playlist của bạn'}</div>
+                        </div>
                     </a>
                 </c:forEach>
             </div>
         </aside>
 
+
         <script>
-    const contextPath = '${pageContext.request.contextPath}';
+            const contextPath = '${pageContext.request.contextPath}';
 
 
-    function openCreatePlaylistModal() {
-        const form = document.getElementById("createPlaylistForm");
-        form.style.display = form.style.display === "none" ? "block" : "none";
-        document.getElementById("newPlaylistInput").focus();
-    }
+            // Gọi API lấy queue từ session
+            fetch(contextPath + "/queue?action=getCurrentQueue")
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Queue từ session:", data);
+                        // TODO: render ra giao diện nếu cần
+                    })
+                    .catch(error => console.error("Lỗi lấy queue:", error));
 
-    function createPlaylist() {
-        const name = document.getElementById("newPlaylistInput").value.trim();
-        if (!name) {
-            alert("Vui lòng nhập tên playlist!");
-            return;
-        }
+            function playAndSaveHistory(filePath, title, artist, songId) {
+                playSong(filePath, title, artist, songId);
 
-        fetch(contextPath + "/playlist", {
-            method: "POST",
-            headers: {"Content-Type": "application/x-www-form-urlencoded"},
-            body: new URLSearchParams({
-                action: "createPlaylist",
-                name: name,
-                description: "",
-                isPublic: true
-            })
-        })
+                fetch(contextPath + "/listening-history", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: new URLSearchParams({
+                        songId: songId
+                    }),
+                    credentials: "include"
+                })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
-                        alert("🎉 Playlist đã tạo!");
-                        document.getElementById("newPlaylistInput").value = "";
-                        document.getElementById("createPlaylistForm").style.display = "none";
-                        // Làm mới danh sách playlist
-                        refreshPlaylistList();
+                    if (!data.success) {
+                        console.error("Không thể lưu lịch sử nghe:", data.error);
                     } else {
-                        alert("❌ Tạo playlist thất bại: " + data.message);
+                        // Sau khi lưu thành công, render lại lịch sử từ server
+                        updateListeningHistory();
                     }
                 })
                 .catch(err => {
-                    console.error("Lỗi khi tạo playlist:", err);
-                    alert("❌ Lỗi hệ thống khi tạo playlist.");
+                    console.error("Lỗi khi gửi lịch sử nghe:", err);
                 });
-    }
+            }
 
-    function refreshPlaylistList() {
-        const section = document.getElementById("userPlaylistsSidebar");
-        // Giữ tiêu đề và xóa các playlist cũ
-        section.innerHTML = '<h4 style="margin-left: 16px;">🎵 Playlist của bạn</h4>';
 
-        // Lấy danh sách playlist từ server
-        fetch(contextPath + "/playlist?action=getUserPlaylists")
-                .then(res => res.json())
-                .then(playlists => {
-                    playlists.forEach(pl => {
-                        const div = document.createElement("div");
-                        div.className = "library-item";
-div.setAttribute("data-playlist-id", pl.playlistID);
-div.onclick = () => {
-     window.location.href = `${contextPath}/playlist?action=viewPlaylistDetail&playlistId=${pl.playlistID}`;
-};
-                                                    div.innerHTML = `
+            document.addEventListener("DOMContentLoaded", function () {
+                updateListeningHistory(); // GỌI API & render lịch sử nghe
+            });
+
+            function updateListeningHistory() {
+  fetch(contextPath + "/listening-history")
+    .then(res => res.json())
+    .then(data => {
+      const container = document.querySelector("#recentListening");
+      container.innerHTML = '<h4 style="margin-left: 16px;">🕒 Gần đây đã nghe</h4>';
+
+      if (data.length === 0) {
+        container.innerHTML += "<p style='padding: 8px;'>Chưa có bài hát nào gần đây</p>";
+        return;
+      }
+
+      data.forEach(song => {
+        const div = document.createElement("div");
+        div.className = "library-item";
+        div.innerHTML = `
+          <img src="${contextPath}/songImages/${song.thumbnail}" 
+               alt="${song.title}" 
+               onerror="this.src='https://via.placeholder.com/48x48?text=♪'" />
+          <div class="library-item-info">
+            <div class="library-item-title">${song.title}</div>
+            <div class="library-item-subtitle">${song.artist}</div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    })
+    .catch(err => {
+      console.error("Lỗi tải lịch sử nghe:", err);
+    });
+}
+
+
+            function addToListeningHistoryUI(song) {
+                const container = document.querySelector("#recentListening");
+                let items = Array.from(container.querySelectorAll('.library-item'));
+                // Tạo div mới cho bài hát
+                const div = document.createElement("div");
+                div.className = "library-item";
+                div.innerHTML = `
+                    <img src="${contextPath}/songImages/${song.thumbnail}" 
+                         onerror="this.src='https://via.placeholder.com/48x48?text=♪'" 
+                         alt="cover" />
+                    <div class="library-item-info">
+                        <div class="library-item-title">${song.title}</div>
+                        <div class="library-item-subtitle">${song.artist}</div>
+                    </div>
+                `;
+                // Thêm vào đầu danh sách
+                if (items.length > 0) {
+                    container.insertBefore(div, items[0]);
+                } else {
+                    container.appendChild(div);
+                }
+                // Giới hạn chỉ hiển thị tối đa 5 bài
+                items = Array.from(container.querySelectorAll('.library-item'));
+                if (items.length > 5) {
+                    items[items.length - 1].remove();
+                }
+            }
+
+// ✅ Gọi hàm này sau khi gửi POST lưu lịch sử:
+            fetch(contextPath + "/listening-history", {
+                method: "POST",
+                headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                body: new URLSearchParams({songId})
+            })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Không gọi updateListeningHistory nữa → chỉ cập nhật UI trực tiếp:
+                            addToListeningHistoryUI({
+                                songID: songId,
+                                title,
+                                artist,
+                                thumbnail: toImageFileName(title)
+                            });
+                        }
+                    });
+
+            function openCreatePlaylistModal() {
+                const form = document.getElementById("createPlaylistForm");
+                form.style.display = form.style.display === "none" ? "block" : "none";
+                document.getElementById("newPlaylistInput").focus();
+            }
+
+            function createPlaylist() {
+                const name = document.getElementById("newPlaylistInput").value.trim();
+                if (!name) {
+                    alert("Vui lòng nhập tên playlist!");
+                    return;
+                }
+
+                fetch(contextPath + "/listening-history", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: new URLSearchParams({
+                        songId: songId
+                    }),
+                    credentials: "include" // Ensure cookies (including session cookie) are sent
+                })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (!data.success) {
+                                console.error("Không thể lưu lịch sử nghe:", data.error);
+                            } else {
+                                console.log("✅ Đã lưu lịch sử, gọi cập nhật UI");
+                                updateListeningHistory(); // Update the UI
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Lỗi khi gửi lịch sử nghe:", err);
+                        });
+            }
+
+            function refreshPlaylistList() {
+                const section = document.getElementById("userPlaylistsSidebar");
+                // Giữ tiêu đề và xóa các playlist cũ
+                section.innerHTML = '<h4 style="margin-left: 16px;">🎵 Playlist của bạn</h4>';
+
+                // Lấy danh sách playlist từ server
+                fetch(contextPath + "/playlist?action=getUserPlaylists")
+                        .then(res => res.json())
+                        .then(playlists => {
+                            playlists.forEach(pl => {
+                                const div = document.createElement("div");
+                                div.className = "library-item";
+                                div.setAttribute("data-playlist-id", pl.playlistID);
+                                div.onclick = () => {
+                                    window.location.href = `${contextPath}/playlist?action=viewPlaylistDetail&playlistId=${pl.playlistID}`;
+                                                            };
+                                                            div.innerHTML = `
     <img src="https://via.placeholder.com/48x48/333333/ffffff?text=♪" alt="cover"/>
     <div class="library-item-info">
         <div class="library-item-title">` + pl.name + `</div>
         <div class="library-item-subtitle">` + (pl.description || 'Playlist của bạn') + `</div>
     </div>
 `;
-                                                    section.appendChild(div);
-                                                });
-                                            })
-                                            .catch(err => {
-                                                console.error("Lỗi khi tải playlist:", err);
-                                                section.innerHTML += '<div style="color: red; padding: 8px;">Không thể tải playlist</div>';
-                                            });
-                                }
+                                                            section.appendChild(div);
+                                                        });
+                                                    })
+                                                    .catch(err => {
+                                                        console.error("Lỗi khi tải playlist:", err);
+                                                        section.innerHTML += '<div style="color: red; padding: 8px;">Không thể tải playlist</div>';
+                                                    });
+                                        }
 
-                                function toggleSidebar() {
-                                    const sidebar = document.getElementById("sidebar");
-                                    sidebar.classList.toggle("collapsed");
-                                }
+                                        function toggleSidebar() {
+                                            const sidebar = document.getElementById("sidebar");
+                                            sidebar.classList.toggle("collapsed");
+                                        }
 
-                                function toggleSortOptions() {
-                                    const options = document.getElementById("sortOptions");
-                                    options.style.display = options.style.display === "flex" ? "none" : "flex";
-                                }
+                                        function toggleSortOptions() {
+                                            const options = document.getElementById("sortOptions");
+                                            options.style.display = options.style.display === "flex" ? "none" : "flex";
+                                        }
 
-                                function setViewMode(mode) {
-                                    const section = document.getElementById("userPlaylistsSidebar");
-                                    const buttons = document.querySelectorAll('.view-modes button');
-                                    buttons.forEach(btn => btn.classList.remove("active"));
-                                    document.querySelector(`.view-modes button[onclick*="setViewMode('${mode}')"]`).classList.add("active");
-                                    section.classList.remove("view-list", "view-grid");
-                                    section.classList.add(`view-${mode}`);
-                                }
+                                        function setViewMode(mode) {
+                                            const section = document.getElementById("userPlaylistsSidebar");
+                                            const buttons = document.querySelectorAll('.view-modes button');
+                                            buttons.forEach(btn => btn.classList.remove("active"));
+                                            const btn = document.querySelector(`.view-modes button[onclick*="setViewMode('${mode}')"]`);
+                                            if (btn) btn.classList.add("active");
+                                            section.classList.remove("view-list", "view-grid");
+                                            section.classList.add(`view-${mode}`);
+                                        }
+
+
+                                        document.addEventListener("DOMContentLoaded", function () {
+                                            fetch(contextPath + "/listening-history")
+                                                    .then(res => res.json())
+                                                    .then(data => {
+                                                        const container = document.querySelector("#recentListening");
+                                                        container.innerHTML = '<h4 style="margin-left: 16px;">🕒 Gần đây đã nghe</h4>';
+
+                                                        if (data.length === 0) {
+                                                            container.innerHTML += "<p style='padding: 8px;'>Chưa có bài hát nào gần đây</p>";
+                                                            return;
+                                                        }
+
+                                                        data.forEach(song => {
+                                                            const div = document.createElement("div");
+                                                            div.className = "library-item";
+                                                            div.onclick = () => playSong(song.filePath, song.title, song.artist, song.songID);
+                                                            div.innerHTML = `
+                    <img src="${contextPath}/songImages/${song.thumbnail}" 
+                         onerror="this.src='https://via.placeholder.com/48x48?text=♪'" 
+                         alt="cover" />
+                    <div class="library-item-info">
+                        <div class="library-item-title">${song.title}</div>
+                        <div class="library-item-subtitle">${song.artist}</div>
+                    </div>
+                `;
+                                                            container.appendChild(div);
+                                                        });
+                                                    })
+                                                    .catch(err => {
+                                                        console.error("Lỗi tải lịch sử nghe:", err);
+                                                    });
+                                        });
+
+            document.addEventListener("DOMContentLoaded", function () {
+                const sidebar = document.getElementById("userPlaylistsSidebar");
+                const toggleBtn = document.getElementById("togglePlaylistBtn");
+                const playlistListWrapper = document.getElementById("playlistListWrapper");
+                const gradient = document.getElementById("playlistGradient");
+                let expanded = false;
+                toggleBtn.addEventListener("click", function () {
+                    expanded = !expanded;
+                    if (expanded) {
+                        sidebar.style.maxHeight = "400px";
+                        playlistListWrapper.style.overflowY = "auto";
+                        sidebar.style.overflowY = "visible";
+                        gradient.style.display = "none";
+                        toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+                    } else {
+                        sidebar.style.maxHeight = "180px";
+                        playlistListWrapper.style.overflowY = "hidden";
+                        sidebar.style.overflowY = "hidden";
+                        gradient.style.display = "block";
+                        toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                    }
+                });
+            });
+
         </script>
     </body>
 </html>

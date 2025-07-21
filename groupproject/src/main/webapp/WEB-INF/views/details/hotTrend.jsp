@@ -225,7 +225,7 @@
                     int m = (s.getDuration() % 3600) / 60;
                     int sec = s.getDuration() % 60;
                     String encodedPath = URLEncoder.encode((s.getFilePath() != null ? s.getFilePath() : ""), "UTF-8");%>
-                    <div class="song-item" data-song-id="<%= s.getSongID()%>" data-url="<%= request.getContextPath()%>/play?file=<%= encodedPath%>" onclick="playSong('<%= request.getContextPath()%>/play?file=<%= encodedPath%>', '<%= s.getTitle().replace("'", "\\'")%>', '<%= s.getArtist() != null ? s.getArtist().replace("'", "\\'") : "Không rõ nghệ sĩ"%>', 'songImages/<%= dao.SongDAO.toImageFileName(s.getTitle())%>', this)">
+                    <div class="song-item" data-song-id="<%= s.getSongID()%>" data-url="<%= request.getContextPath()%>/play?file=<%= encodedPath%>" data-title="<%= s.getTitle()%>" data-artist="<%= s.getArtist() != null ? s.getArtist() : "Không rõ nghệ sĩ"%>" onclick="playSongFromElement(this)">
                         <div class="left">
                             <span style="width:24px;text-align:right;"><%= i++%></span>
                             <img src="songImages/<%= dao.SongDAO.toImageFileName(s.getTitle())%>" alt="" onerror="this.onerror=null; this.src='https://via.placeholder.com/48x48/333333/ffffff?text=♪';">
@@ -407,6 +407,16 @@ function createNewPlaylistFromInput() {
         }
     });
             let currentPlayingUrl = "";
+            
+            function playSongFromElement(element) {
+                const audioUrl = element.dataset.url;
+                const title = element.dataset.title;
+                const artist = element.dataset.artist;
+                const songId = element.dataset.songId;
+                
+                playSong(audioUrl, title, artist, songId);
+            }
+            
             function playFirstSong() {
                 const firstSongPath = '<%= encodedFirstSongPath%>';
                 const title = '<%= songToPlay != null ? songToPlay.getTitle().replace("'", "\\'") : "Không có bài hát"%>';
@@ -420,7 +430,7 @@ function createNewPlaylistFromInput() {
             function toggleCreatePlaylist() {
                 alert("👉 Mở popup tạo playlist ở đây nha bro 😎 (Chưa code phần modal)");
             }
-            function playSong(audioUrl, title, artist, imageUrl, element) {
+            function playSong(audioUrl, title, artist, songId = null, imageUrl = null, element = null) {
                 const audio = document.getElementById('audioPlayer');
                 const titleElem = document.getElementById('mediaTitle');
                 const artistElem = document.getElementById('mediaArtist');
@@ -432,7 +442,16 @@ function createNewPlaylistFromInput() {
                 audio.play();
                 titleElem.textContent = title;
                 artistElem.textContent = artist;
-                thumbnail.src = imageUrl;
+                
+                // Xử lý ảnh thumbnail
+                if (imageUrl) {
+                    thumbnail.src = imageUrl;
+                } else {
+                    // Tạo tên file ảnh từ title
+                    const imgName = toImageFileName(title);
+                    thumbnail.src = contextPath + '/songImages/' + imgName;
+                }
+                
                 thumbnail.onerror = () => {
                     thumbnail.src = 'https://via.placeholder.com/60x60/333333/ffffff?text=♪';
                 };
@@ -443,16 +462,34 @@ function createNewPlaylistFromInput() {
 
                 // Cập nhật ảnh header
                 const headerImage = document.getElementById('firstSongImage');
-                if (headerImage && imageUrl) {
-                    headerImage.src = imageUrl;
+                if (headerImage && thumbnail.src) {
+                    headerImage.src = thumbnail.src;
                 }
 
                 // Gửi yêu cầu lưu lịch sử nghe
-                if (element && element.dataset && element.dataset.songId) {
-                    fetch(`${window.location.origin}${contextPath}/listening?songId=${element.dataset.songId}`)
-                                        .catch(err => console.error("Lỗi khi lưu lịch sử:", err));
+                if (songId) {
+                    fetch(`${window.location.origin}${contextPath}/listening?songId=${songId}`)
+                        .then(response => {
+                            if (response.ok) {
+                                console.log('✅ Đã cập nhật lịch sử nghe nhạc cho songId:', songId);
+                            } else {
+                                console.log('❌ Lỗi khi cập nhật lịch sử nghe nhạc');
                             }
-                        }
+                        })
+                        .catch(err => console.error("❌ Lỗi khi lưu lịch sử:", err));
+                }
+            }
+
+            function toImageFileName(title) {
+                if (!title) return 'default.jpg';
+                const normalized = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+                const words = normalized.split(/[^a-zA-Z0-9]+/);
+                let pascalCase = "";
+                for (let word of words) {
+                    if (word) pascalCase += word[0].toUpperCase() + word.slice(1);
+                }
+                return pascalCase + ".jpg";
+            }
                         function highlightCurrentSong() {
                             const items = document.querySelectorAll('.song-item');
                             items.forEach(item => {
