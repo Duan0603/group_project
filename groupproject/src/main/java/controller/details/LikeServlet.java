@@ -1,6 +1,7 @@
 package controller.details;
 
 import dao.LikeDAO;
+import dao.PlaylistDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -26,6 +27,9 @@ public class LikeServlet extends HttpServlet {
             }
             int userId = user.getUserId();
             java.util.List<model.Songs> likedSongs = likeDAO.getLikedSongsByUserId(userId);
+            // Thêm userPlaylists vào request
+            PlaylistDAO playlistDAO = new PlaylistDAO();
+            request.setAttribute("userPlaylists", playlistDAO.getPlaylistsByUser(userId));
             request.setAttribute("likedSongs", likedSongs);
             request.getRequestDispatcher("/WEB-INF/views/details/likedSongs.jsp").forward(request, response);
             return;

@@ -1,12 +1,15 @@
 package controller.details;
 
 import dao.SongDAO;
+import dao.PlaylistDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import model.Songs;
+import model.User;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -68,6 +71,14 @@ public class HotTrendServlet extends HttpServlet {
         songs.removeIf(s -> s.getTitle() != null && s.getTitle().equalsIgnoreCase("Sample Song 1"));
 
         int totalDuration = songs.stream().mapToInt(Songs::getDuration).sum();
+
+        // Truyền userPlaylists vào request
+        HttpSession session = request.getSession(false);
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
+        if (user != null) {
+            PlaylistDAO playlistDAO = new PlaylistDAO();
+            request.setAttribute("userPlaylists", playlistDAO.getPlaylistsByUser(user.getUserId()));
+        }
 
         request.setAttribute("songs", songs);
         request.setAttribute("songToPlay", songToPlay);

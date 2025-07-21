@@ -9,6 +9,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import model.Songs;
+import dao.PlaylistDAO;
+import model.User;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet(name = "ArtistSongsServlet", urlPatterns = {"/artistsongs"})
 public class ArtistSongsServlet extends HttpServlet {
@@ -49,6 +52,15 @@ public class ArtistSongsServlet extends HttpServlet {
         request.setAttribute("totalDuration", totalDuration);
 
         request.setAttribute("artistName", artistName);
+
+        // Truyền userPlaylists vào request
+        HttpSession session = request.getSession(false);
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
+        if (user != null) {
+            PlaylistDAO playlistDAO = new PlaylistDAO();
+            request.setAttribute("userPlaylists", playlistDAO.getPlaylistsByUser(user.getUserId()));
+        }
+
         request.getRequestDispatcher("/WEB-INF/views/details/artistSongs.jsp").forward(request, response);
     }
 

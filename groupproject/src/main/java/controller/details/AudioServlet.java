@@ -6,6 +6,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.*;
 
@@ -27,6 +28,12 @@ public class AudioServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        model.User user = (session != null) ? (model.User) session.getAttribute("user") : null;
+        if (user == null || !user.isPremium()) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn cần đăng nhập và mua Premium để nghe nhạc.");
+            return;
+        }
 
         String fileName = request.getParameter("file");
         String songIdParam = request.getParameter("songId"); // ✅ lấy songId để ghi log

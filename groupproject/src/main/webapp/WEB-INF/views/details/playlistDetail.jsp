@@ -193,6 +193,12 @@
             </div>
         </div>
         <jsp:include page="/WEB-INF/views/layouts/player.jsp" />
+        <!-- Premium Popup -->
+        <div id="premiumPopup" style="display:none;position:fixed;bottom:100px;right:40px;z-index:99999;background:#fff;color:#222;padding:18px 28px;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.18);font-size:16px;font-weight:500;align-items:center;gap:12px;min-width:260px;max-width:350px;">
+            <span style="color:#e84393;font-size:22px;margin-right:10px;vertical-align:middle;"><i class="fas fa-crown"></i></span>
+            Bạn cần <a href="<%= request.getContextPath() %>/payos-premium" style="color:#e84393;font-weight:bold;text-decoration:underline;margin:0 4px;">đăng ký Premium</a> để sử dụng tính năng này!
+            <button onclick="document.getElementById('premiumPopup').style.display='none'" style="background:none;border:none;color:#e84393;font-size:18px;float:right;margin-left:10px;cursor:pointer;">&times;</button>
+        </div>
         <script>
         function playSongFromDiv(div) {
             var file = div.dataset.file;
@@ -202,6 +208,8 @@
             var img = 'songImages/' + title.replace(/ /g, '') + '.jpg';
             if (typeof playSong === 'function') {
                 playSong(contextPath + '/play?file=' + encodeURIComponent(file), title, artist, img, songId, div);
+                window._currentSongId = parseInt(songId);
+                if (typeof checkLike === 'function') checkLike(window._currentSongId);
             }
         }
         // Đóng modal khi click ra ngoài
@@ -233,10 +241,20 @@
                     const next = window.currentSongList[window.currentSongIndex];
                     if (typeof playSong === 'function') {
                         playSong(contextPath + '/play?file=' + encodeURIComponent(next.filePath), next.title, next.artist, 'songImages/' + next.title.replace(/ /g, '') + '.jpg', next.songId, allSongItems[window.currentSongIndex]);
+                        window._currentSongId = parseInt(next.songId);
+                        if (typeof checkLike === 'function') checkLike(window._currentSongId);
                     }
                 }
             });
         }
+        function showPremiumPopup() {
+            var popup = document.getElementById('premiumPopup');
+            if (popup) {
+                popup.style.display = 'flex';
+                setTimeout(function(){ popup.style.display = 'none'; }, 3500);
+            }
+        }
         </script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </body>
 </html>

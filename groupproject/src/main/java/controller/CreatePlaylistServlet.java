@@ -20,6 +20,12 @@ public class CreatePlaylistServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        model.User user = (session != null) ? (model.User) session.getAttribute("user") : null;
+        if (user == null || !user.isPremium()) {
+            response.sendRedirect(request.getContextPath() + "/login?error=premium_required");
+            return;
+        }
         String playlistName = request.getParameter("playlistName");
         String[] selectedSongIdsStr = request.getParameterValues("selectedSongIds");
         int defaultUserId = 1; // Sửa lại lấy userId thực tế nếu có đăng nhập
