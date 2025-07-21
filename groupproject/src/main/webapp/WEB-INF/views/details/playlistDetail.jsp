@@ -198,10 +198,10 @@
             var file = div.dataset.file;
             var title = div.dataset.title;
             var artist = div.dataset.artist;
+            var songId = div.dataset.songId;
             var img = 'songImages/' + title.replace(/ /g, '') + '.jpg';
-            // Gọi hàm playSong nếu có
             if (typeof playSong === 'function') {
-                playSong(file, title, artist, img, div);
+                playSong(contextPath + '/play?file=' + encodeURIComponent(file), title, artist, img, songId, div);
             }
         }
         // Đóng modal khi click ra ngoài
@@ -210,6 +210,32 @@
             if (event.target === modal) {
                 modal.style.display = "none";
             }
+        }
+        // Khi click vào bất kỳ bài nào trong playlist, cập nhật queue cho player
+        const allSongItems = Array.from(document.querySelectorAll('.song-item'));
+        allSongItems.forEach((item, idx) => {
+            item.addEventListener('click', function() {
+                window.currentSongList = allSongItems.map(it => ({
+                    filePath: it.dataset.file,
+                    title: it.dataset.title,
+                    artist: it.dataset.artist,
+                    songId: it.dataset.songId
+                }));
+                window.currentSongIndex = idx;
+            });
+        });
+        // Tự động chuyển bài khi hết nhạc
+        const audio = document.getElementById('audioPlayer');
+        if (audio) {
+            audio.addEventListener('ended', function () {
+                if (window.currentSongList && window.currentSongIndex < window.currentSongList.length - 1) {
+                    window.currentSongIndex++;
+                    const next = window.currentSongList[window.currentSongIndex];
+                    if (typeof playSong === 'function') {
+                        playSong(contextPath + '/play?file=' + encodeURIComponent(next.filePath), next.title, next.artist, 'songImages/' + next.title.replace(/ /g, '') + '.jpg', next.songId, allSongItems[window.currentSongIndex]);
+                    }
+                }
+            });
         }
         </script>
     </body>
