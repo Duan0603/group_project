@@ -20,7 +20,7 @@ public class ForgotPasswordServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
-        req.getRequestDispatcher("/WEB-INF/views/auth/forgot_password.jsp").forward(req, res);
+        req.getRequestDispatcher("/WEB-INF/views/auth/forgot_pass.jsp").forward(req, res);
     }
 
     @Override
@@ -32,7 +32,7 @@ public class ForgotPasswordServlet extends HttpServlet {
 
         if (user == null) {
             req.setAttribute("message", "Email không tồn tại trong hệ thống!");
-            req.getRequestDispatcher("/WEB-INF/views/auth/forgot_password.jsp").forward(req, res);
+            req.getRequestDispatcher("/WEB-INF/views/auth/forgot_pass.jsp").forward(req, res);
             return;
         }
 
@@ -69,6 +69,6 @@ public class ForgotPasswordServlet extends HttpServlet {
         req.setAttribute("message",
                 ok ? "Đã gửi email đặt lại mật khẩu – vui lòng kiểm tra hộp thư!"
                         : "Không thể gửi email, vui lòng thử lại sau.");
-        req.getRequestDispatcher("/WEB-INF/views/auth/forgot_password.jsp").forward(req, res);
+        req.getRequestDispatcher("/WEB-INF/views/auth/forgot_pass.jsp").forward(req, res);
     }
 }
